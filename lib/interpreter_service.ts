@@ -103,12 +103,49 @@ export default class InterpreterService {
     return this.astCache ? this.astCache.getOrParse(source, parseSource) : parseSource();
   }
 
-  /** Ignore legacy row metadata at the beginning of a main script or formula. */
+  /** Remove legacy metadata without changing offsets or literal contents. */
   private expandRowDirective(source: string): string {
-    return source.replace(
-      /^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?((?:\s|\/\/[^\r\n]*(?:\r?\n|$)|\/\*[\s\S]*?\*\/)*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n|\/\/)/,
-      (_match, wrapper = "", whitespace) => `${wrapper}${whitespace};`,
-    );
+    const chars = source.split("");
+    const stack: { mode: string; depth: number }[] = [{ mode: "code", depth: 0 }];
+    let lineStart = 0;
+    for (let i = 0; i < source.length; i++) {
+      const c = source[i], next = source[i + 1];
+      if ("\r\n\u2028\u2029".includes(c)) lineStart = i + 1;
+      const frame = stack[stack.length - 1];
+      if (frame.mode === "line") {
+        if ("\r\n\u2028\u2029".includes(c)) stack.pop();
+        continue;
+      }
+      if (frame.mode === "block") {
+        if (c === "*" && next === "/") { stack.pop(); i++; }
+        continue;
+      }
+      if (frame.mode !== "code") {
+        if (c === "\\") { i++; continue; }
+        if (c === frame.mode) { stack.pop(); continue; }
+        if (frame.mode === "`" && c === "$" && next === "{") {
+          stack.push({ mode: "code", depth: 1 }); i++;
+        }
+        continue;
+      }
+      if (c === "#" && /^[\t ]*$/.test(source.slice(lineStart, i))) {
+        const match = /^#CURRENT_ROW[\t ]*=[\t ]*(?:\d+(?:[\t ]*,[\t ]*\d+)*)?[\t ]*;?[\t ]*(?:\/\/[^\r\n\u2028\u2029]*)?(?=[\r\n\u2028\u2029]|$)/i.exec(source.slice(i));
+        if (match) {
+          for (let j = i; j < i + match[0].length; j++) chars[j] = " ";
+          i += match[0].length - 1;
+          continue;
+        }
+      }
+      if (c === "/" && (next === "/" || next === "*")) {
+        stack.push({ mode: next === "/" ? "line" : "block", depth: 0 }); i++;
+      } else if (c === "\"" || c === "'" || c === "`") {
+        stack.push({ mode: c, depth: 0 });
+      } else if (frame.depth > 0) {
+        if (c === "{") frame.depth++;
+        if (c === "}" && --frame.depth === 0) stack.pop();
+      }
+    }
+    return chars.join("");
   }
 
   clearAstCache() {

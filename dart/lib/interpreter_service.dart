@@ -133,11 +133,55 @@ class InterpreterService {
   }
 
   String _expandRowDirective(String source) {
-    final pattern = RegExp(
-      r'^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?((?:\s|\/\/[^\r\n]*(?:\r?\n|$)|\/\*[\s\S]*?\*\/)*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n|\/\/)',
+    final chars = source.split('');
+    final modes = <String>['code'];
+    final depths = <int>[0];
+    final directive = RegExp(
+      r'^#CURRENT_ROW[\t ]*=[\t ]*(?:\d+(?:[\t ]*,[\t ]*\d+)*)?[\t ]*;?[\t ]*(?://[^\r\n\u2028\u2029]*)?(?=[\r\n\u2028\u2029]|$)',
+      caseSensitive: false,
     );
-    return source.replaceFirstMapped(pattern, (match) =>
-      '${match[1] ?? ''}${match[2]};');
+    var lineStart = 0;
+    void push(String mode, [int depth = 0]) { modes.add(mode); depths.add(depth); }
+    void pop() { modes.removeLast(); depths.removeLast(); }
+    for (var i = 0; i < source.length; i++) {
+      final c = source[i], next = i + 1 < source.length ? source[i + 1] : '';
+      if ('\r\n\u2028\u2029'.contains(c)) lineStart = i + 1;
+      final mode = modes.last;
+      if (mode == 'line') {
+        if ('\r\n\u2028\u2029'.contains(c)) pop();
+        continue;
+      }
+      if (mode == 'block') {
+        if (c == '*' && next == '/') { pop(); i++; }
+        continue;
+      }
+      if (mode != 'code') {
+        if (c == r'\') { i++; continue; }
+        if (c == mode) { pop(); continue; }
+        if (mode == '`' && c == r'$' && next == '{') { push('code', 1); i++; }
+        continue;
+      }
+      if (c == '#' && RegExp(r'^[\t ]*$').hasMatch(source.substring(lineStart, i))) {
+        final match = directive.firstMatch(source.substring(i));
+        if (match != null) {
+          for (var j = i; j < i + match.end; j++) { chars[j] = ' '; }
+          i += match.end - 1;
+          continue;
+        }
+      }
+      if (c == '/' && (next == '/' || next == '*')) {
+        push(next == '/' ? 'line' : 'block'); i++;
+      } else if (c == '"' || c == "'" || c == '`') {
+        push(c);
+      } else if (depths.last > 0) {
+        if (c == '{') depths[depths.length - 1]++;
+        if (c == '}') {
+          depths[depths.length - 1]--;
+          if (depths.last == 0) pop();
+        }
+      }
+    }
+    return chars.join();
   }
 
   /// Run an imported execute() entry without needing a separate JS source file.

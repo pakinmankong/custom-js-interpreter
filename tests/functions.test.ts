@@ -169,9 +169,22 @@ test("row directive is ignored and host variables supply row indices", () => {
   assert.deepEqual(setup({ CURRENT_ROW: [1,0] }).execute(code), [1,0,10]);
   const { interpreter, execute } = setup({ CURRENT_ROWS: [1,0] });
   interpreter.compile(code);
+  for (const directive of ['#CURRENT_ROW=', '#CURRENt_ROW=0,1', '#current_row= // ignored', '#CURRENT_ROW=;']) {
+    assert.deepEqual(execute(`${directive}\nreturn [GET_CURRENT_ROW_INDEX(), GET_CURRENT_ROW_INDEX(1)];`), [1,0]);
+    assert.equal(setup().execute(`${directive}\nreturn 42;`), 42);
+  }
   assert.deepEqual(execute(code), [1,0,10]);
   assert.deepEqual(execute('#CURRENT_ROW = 1,0\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1)];'), [1,0]);
   assert.equal(execute('return `hello\n#CURRENT_ROW = 9,9\nworld`;'), 'hello\n#CURRENT_ROW = 9,9\nworld');
+  assert.deepEqual(execute(`var x=10;
+#CURRENT_ROW = 0,1
+function rows() {
+  #current_row=
+  return [GET_CURRENT_ROW_INDEX(), GET_CURRENT_ROW_INDEX(1), x];
+}
+#CURRENt_ROW=9,9
+return rows();`), [1,0,10]);
+  assert.equal(execute('var text = `outer ${`inner`}\n#CURRENT_ROW=9,9\nend`;\n#CURRENT_ROW=\nreturn text;'), 'outer inner\n#CURRENT_ROW=9,9\nend');
 });
 
 test("existing numeric functions still work and print is injectable", () => {

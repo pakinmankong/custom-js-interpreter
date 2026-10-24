@@ -153,7 +153,24 @@ void runFunctionTests(
         }
       } else {
         expect(interpreter.execute(code), [1, 0, 10]);
+        expect(interpreter.execute('''var x=10;
+#CURRENT_ROW = 0,1
+function rows() {
+  #current_row=
+  return [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),x];
+}
+#CURRENt_ROW=9,9
+return rows();'''), [1, 0, 10]);
+        expect(interpreter.execute(r'''var text = `outer ${`inner`}
+#CURRENT_ROW=9,9
+end`;
+#CURRENT_ROW=
+return text;'''), 'outer inner\n#CURRENT_ROW=9,9\nend');
+        for (final directive in ['#CURRENT_ROW=', '#CURRENt_ROW=0,1', '#current_row= // ignored', '#CURRENT_ROW=;']) {
+          expect(interpreter.execute('$directive\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1)];'), [1, 0]);
+        }
       }
+      expect(interpreter.execute('#CURRENt_ROW=\nreturn 42;'), 42);
     }
   });
   test('GOAL_SEEK block callback, closure and return signal', () {

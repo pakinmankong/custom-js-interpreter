@@ -43,7 +43,7 @@ or `variables: {'CURRENT_ROWS': [0, 0]}` in Dart. Indices are zero-based;
 `GET_CURRENT_ROW_INDEX(1)` reads the second level. The legacy `CURRENT_ROW`
 name remains supported when `CURRENT_ROWS` is absent.
 
-Legacy metadata at the beginning of a script or formula is ignored:
+Legacy metadata on its own line anywhere in a script or formula is ignored:
 
 ```js
 #CURRENT_ROW = 0,1
@@ -52,7 +52,12 @@ return ROW([10, 20], null, 1) // Uses variables.CURRENT_ROWS[1]
 
 The directive does not supply row indices. Pass `CURRENT_ROWS` (or legacy
 `CURRENT_ROW`) through `variables`. Without row variables, implicit row selection
-throws an error. Keep legacy metadata on its own line before JavaScript statements.
+throws an error. Keep legacy metadata on its own line. It can appear between
+statements or inside functions. Text inside strings, templates and comments
+is preserved, and removing metadata preserves source line numbers.
+The metadata name is case-insensitive, and an empty value such as
+`#CURRENT_ROW=` is also ignored. This does not change the case-sensitive names
+of JavaScript variables.
 The following signatures use `?` for an optional argument.
 
 | Group | Functions |

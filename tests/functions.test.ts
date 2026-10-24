@@ -187,6 +187,15 @@ return rows();`), [1,0,10]);
   assert.equal(execute('var text = `outer ${`inner`}\n#CURRENT_ROW=9,9\nend`;\n#CURRENT_ROW=\nreturn text;'), 'outer inner\n#CURRENT_ROW=9,9\nend');
 });
 
+test("ignore one, two and three row indices individually and on consecutive lines", () => {
+  const directives = ['#CURRENT_ROW = 0', '#CURRENT_ROW = 0,0', '#CURRENT_ROW = 0,0,0'];
+  for (const metadata of [...directives, directives.join('\n')]) {
+    const { execute } = setup({ CURRENT_ROWS: [1,0] });
+    assert.deepEqual(execute(`${metadata}\nreturn [ROW([10,20]),GET_CURRENT_ROW_INDEX(1)];`), [20,0]);
+    assert.equal(setup().execute(`${metadata}\nreturn 42;`), 42);
+  }
+});
+
 test("existing numeric functions still work and print is injectable", () => {
   const { execute, calls } = setup();
   assert.deepEqual(execute(`print("ok");return [NUMBER("2"),EXP(0),SUMSQ(1,2,3),TREND([2,4,6],[1,2,3],4),MIN([3,1]),MAX(1,3),ABS(-1),SQRT(4),POWER(2,3),LOG(100),DECIMAL_PLACES(1.25),ROUND(1.25,1),SIG(0)];`),[2,1,14,8,1,3,1,2,8,2,2,1.3,"0"]);

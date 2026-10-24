@@ -173,6 +173,18 @@ return text;'''), 'outer inner\n#CURRENT_ROW=9,9\nend');
       expect(interpreter.execute('#CURRENt_ROW=\nreturn 42;'), 42);
     }
   });
+  test('ignore one, two and three row indices and consecutive metadata lines', () {
+    final directives = ['#CURRENT_ROW = 0', '#CURRENT_ROW = 0,0', '#CURRENT_ROW = 0,0,0'];
+    for (final metadata in [...directives, directives.join('\n')]) {
+      late final InterpreterService interpreter;
+      interpreter = InterpreterService(InterpreterContext(
+        variables: {'CURRENT_ROWS': [1, 0]},
+        functions: createFunctions(getEnv: () => interpreter.currentEnv),
+      ));
+      expect(interpreter.execute('$metadata\nreturn [ROW([10,20]),GET_CURRENT_ROW_INDEX(1)];'), [20, 0]);
+      expect(InterpreterService().execute('$metadata\nreturn 42;'), 42);
+    }
+  });
   test('GOAL_SEEK block callback, closure and return signal', () {
     final interpreter = InterpreterService(
       InterpreterContext(functions: createFunctions()),

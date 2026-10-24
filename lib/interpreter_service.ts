@@ -10,7 +10,7 @@ export interface InterpreterContext {
   variables?: Record<string, any>;
   functions?: Record<string, any>;
   code?: string;
-  /** Default: a per-instance 100-entry cache. Use false to disable or share an AstCache. */
+  /** Disabled by default. Pass an AstCache instance to enable caching. */
   astCache?: AstCache | false;
 }
 
@@ -32,7 +32,7 @@ export default class InterpreterService {
 
   constructor(context: InterpreterContext = {}) {
     this.context = context;
-    this.astCache = context.astCache === false ? null : context.astCache ?? new AstCache();
+    this.astCache = context.astCache === false ? null : context.astCache ?? null;
 
     this.userCode = context.code || "";
 

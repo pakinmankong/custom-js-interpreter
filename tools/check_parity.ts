@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { AstCache } from "../lib/ast_cache.js";
 import InterpreterService from "../lib/interpreter_service.js";
 import { createFunctions } from "../lib/functions.js";
 
@@ -48,7 +49,7 @@ async function run(fixture: any) {
     FAIL: async () => { throw new Error('service failed'); },
   });
   if (fixture.group === "async") Object.assign(functions, { FIND_STD_ERROR: (functions as any).FIND_ASYNC_STD });
-  interpreter = new InterpreterService({ resolver: true,
+  interpreter = new InterpreterService({ resolver: true, astCache: transferAst ? new AstCache() : false,
     variables: {CURRENT_ROW:[1,0],_UNIT_:{1:{ID:1,SYMBOL:"m",NAME:"metre"}},...fixture.variables}, functions,
   });
   try { return {status:"ok", value:encode(asyncMode ? await interpreter.executeAsync(fixture.code) : interpreter.execute(fixture.code)), calls:encode(calls)}; }

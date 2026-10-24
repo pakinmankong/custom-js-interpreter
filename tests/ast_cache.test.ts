@@ -47,7 +47,7 @@ test("syntax errors are retried and do not evict successful entries", () => {
 });
 
 test("cached ASTs are deeply frozen and cannot poison later parses", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   const ast = interpreter.parse("var n=1;");
   assert.ok(Object.isFrozen(ast));
   assert.ok(Object.isFrozen(ast.program.body));
@@ -66,7 +66,7 @@ test("AST caching can be disabled for comparison", () => {
 
 test("execute reuses AST but reads current inputs and repeats side effects", () => {
   let calls = 0;
-  const interpreter = new InterpreterService({ resolver: true, variables: { input: 1 }, functions: { count: () => ++calls } });
+  const interpreter = new InterpreterService({ astCache: new AstCache(), resolver: true, variables: { input: 1 }, functions: { count: () => ++calls } });
   const code = "return [input, count()];";
   assert.deepEqual(interpreter.execute(code), [1,1]);
   interpreter.globalEnv.set("input", 2);
@@ -76,7 +76,7 @@ test("execute reuses AST but reads current inputs and repeats side effects", () 
 });
 
 test("repeated execution creates fresh objects and function closures", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   const code = "const a=[];var n=0;function next(){return ++n;}a.push(next());return a;";
   const first = interpreter.execute(code);
   first.push(99);
@@ -85,14 +85,14 @@ test("repeated execution creates fresh objects and function closures", () => {
 });
 
 test("repeated regex literals create fresh RegExp state", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   const code = 'var regex=/a/g;return [regex.test("a"),regex.lastIndex];';
   assert.deepEqual(interpreter.execute(code), [true,1]);
   assert.deepEqual(interpreter.execute(code), [true,1]);
 });
 
 test("runtime failures do not cache an error or retain a failed scope", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   assert.throws(() => interpreter.execute("return input;"), /Undefined variable: input/);
   interpreter.globalEnv.define("input", 7);
   assert.equal(interpreter.execute("return input;"), 7);
@@ -118,7 +118,7 @@ test("same formula AST uses each data root and current resolver values", () => {
     DATA: { A: "return B;", B: "return 1;" },
     OTHER: { A: "return B;", B: "return 2;" },
   };
-  const interpreter = new InterpreterService({ resolver: true, variables });
+  const interpreter = new InterpreterService({ astCache: new AstCache(), resolver: true, variables });
   const code = "return [DATA.A,OTHER.A];";
   assert.deepEqual(interpreter.execute(code), [1,2]);
   assert.equal(interpreter.astCache!.stats.misses, 4); // main, shared A, two B formulas
@@ -131,7 +131,7 @@ test("same formula AST uses each data root and current resolver values", () => {
 
 test("AST cache does not replace DataResolver's formula result cache", () => {
   let calls = 0;
-  const interpreter = new InterpreterService({ resolver: true, variables: { DATA: { A: "return count();" } }, functions: { count: () => ++calls } });
+  const interpreter = new InterpreterService({ astCache: new AstCache(), resolver: true, variables: { DATA: { A: "return count();" } }, functions: { count: () => ++calls } });
   const code = "return DATA.A;";
   assert.equal(interpreter.execute(code), 1);
   interpreter.clearAstCache();
@@ -142,7 +142,7 @@ test("AST cache does not replace DataResolver's formula result cache", () => {
 });
 
 test("exact source keys include wrappers and whitespace", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   assert.equal(interpreter.execute("return 1;"), 1);
   assert.equal(interpreter.execute("return  1;"), 1);
   assert.equal(interpreter.evaluateFormula("return 1;", "DATA", [], interpreter.globalEnv), 1);
@@ -150,7 +150,7 @@ test("exact source keys include wrappers and whitespace", () => {
 });
 
 test("clear resets cache and counters, then the next execution parses again", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   interpreter.execute("return 1;");
   interpreter.execute("return 1;");
   interpreter.clearAstCache();
@@ -168,7 +168,7 @@ test("AST cache validates capacity and exposes a stats snapshot", () => {
 });
 
 test("AST cache exports a detached, versioned JSON snapshot", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   interpreter.execute("return 1;");
   const snapshot = interpreter.exportAstCache();
   assert.equal(snapshot.format, "custom-js-interpreter.ast-cache");
@@ -183,7 +183,7 @@ test("AST cache exports a detached, versioned JSON snapshot", () => {
 });
 
 test("export includes parsed dependency formulas and preserves BigInt/nonfinite literals", () => {
-  const interpreter = new InterpreterService({ resolver: true, variables: { DATA: { A: "return 1n;" } } });
+  const interpreter = new InterpreterService({ astCache: new AstCache(), resolver: true, variables: { DATA: { A: "return 1n;" } } });
   assert.deepEqual(interpreter.execute("return [DATA.A,1e999];"), [1n,Infinity]);
   const snapshot = JSON.parse(JSON.stringify(interpreter.exportAstCache()));
   assert.equal(snapshot.entries.length, 2);
@@ -194,7 +194,7 @@ test("export includes parsed dependency formulas and preserves BigInt/nonfinite 
 });
 
 test("JSON export does not touch LRU ordering/counters and reports disabled cache", () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({ astCache: new AstCache() });
   interpreter.execute("return 1;");
   const stats = interpreter.astCache!.stats;
   interpreter.exportAstCache();
@@ -206,11 +206,24 @@ test("JSON export does not touch LRU ordering/counters and reports disabled cach
 
 test("compile prepares JSON without invoking code or host functions", () => {
   let calls = 0;
-  const interpreter = new InterpreterService({ resolver: true,functions:{print:()=>calls++}});
+  const interpreter = new InterpreterService({ astCache: new AstCache(), resolver: true,functions:{print:()=>calls++}});
   interpreter.compile('print("hello");return missing;');
   interpreter.compileFormula('return missingFormulaValue;');
   assert.equal(calls,0);
   assert.equal(interpreter.exportAstCache().entries.length,2);
   assert.equal(interpreter.currentEnv,interpreter.globalEnv);
   assert.equal(interpreter.dataResolver.cache.size,0);
+});
+
+
+test("AST cache is disabled by default for sync and async execution", async () => {
+  const interpreter = new InterpreterService();
+  assert.equal(interpreter.astCache, null);
+  const first = interpreter.compile('return 7;');
+  const second = interpreter.compile('return 7;');
+  assert.notEqual(first, second);
+  assert.equal(interpreter.execute('return 7;'), 7);
+  assert.equal(await interpreter.executeAsync('return 7;'), 7);
+  assert.throws(() => interpreter.exportAstCache(), /disabled/);
+  interpreter.clearAstCache();
 });

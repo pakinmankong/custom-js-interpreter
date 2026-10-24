@@ -169,7 +169,8 @@ Interpreter ทำงานแบบ synchronous ให้โหลดข้อ�
 
 ## AST cache (TypeScript)
 
-เปิดใช้ให้อัตโนมัติ โดยแต่ละ interpreter มี LRU cache จำกัด 100 AST
+ค่าเริ่มต้นไม่เก็บ AST cache ต้องส่ง `astCache: new AstCache()` เพื่อเปิดใช้
+โดย `new AstCache()` มี LRU cache จำกัด 100 AST
 ทั้ง `execute()` และสูตรของ DataResolver ใช้ cache นี้ โดย key เป็น source ที่
 ส่งให้ parser จริง รวม wrapper และ whitespace
 
@@ -189,7 +190,7 @@ console.log(cache.stats); // hits: 1, misses: 1, size: 1
 interpreter.clearAstCache(); // ล้าง AST และ reset counters
 ```
 
-ส่ง `astCache: false` เพื่อปิด cache สำหรับทดลองเปรียบเทียบ หรือส่ง `AstCache`
+ไม่ส่ง `astCache` หรือส่ง `astCache: false` เพื่อปิด cache หรือส่ง `AstCache`
 ตัวเดียวกันให้หลาย interpreter เพื่อแชร์ AST ได้ โดยยังแยก scope และค่าตัวแปร
 Cached AST ถูก freeze ทั้งต้นไม้ รวม AST ที่ได้จาก public `parse()` เพื่อป้องกัน
 การแก้ node แล้วกระทบการรันครั้งถัดไป ส่วน syntax error จะไม่ถูกเก็บใน cache
@@ -208,7 +209,7 @@ DataResolver ยังมีอยู่แยกต่างหาก หาก
 ### ส่ง AST cache เป็น JSON ไป Flutter
 
 ```ts
-const interpreter = new InterpreterService();
+const interpreter = new InterpreterService({ astCache: new AstCache() });
 interpreter.compile('return SUM([1, 2, 3]);'); // เตรียม AST โดยไม่รันโค้ด
 const payload = interpreter.exportAstCache();
 const json = JSON.stringify(payload); // ส่งผ่าน API หรือเขียนลงไฟล์ได้

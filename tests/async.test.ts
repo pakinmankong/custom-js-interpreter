@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
+import { AstCache } from '../lib/ast_cache.js';
 import InterpreterService from '../lib/interpreter_service.js';
 import { createFunctions } from '../lib/functions.js';
 import { createInterpreterError } from '../lib/errors.js';
@@ -11,11 +12,11 @@ function decode(value: any): any {
   if (Array.isArray(value)) return value.map(decode);
   return value;
 }
-function setup(extra: Record<string, any> = {}, resolver = false) {
+function setup(extra: Record<string, any> = {}, resolver = false, astCache?: AstCache) {
   const calls: any[][] = [];
   let interpreter: InterpreterService;
   const later = async <T>(value: T) => { await new Promise(resolve => setTimeout(resolve, 1)); return value; };
-  interpreter = new InterpreterService({resolver, variables: extra, functions: {
+  interpreter = new InterpreterService({resolver, astCache, variables: extra, functions: {
     ...createFunctions({getEnv: () => interpreter.currentEnv}),
     DOUBLE: async (n: number) => later(n * 2),
     COMPARE: async (a: number, b: number) => later(a - b),
@@ -54,7 +55,7 @@ test('async resolver awaits dependencies and preserves formula source on rejecti
 });
 
 test('async execution reuses AST without reusing result or suppressing effects', async () => {
-  const {interpreter,calls} = setup({input:2});
+  const {interpreter,calls} = setup({input:2}, false, new AstCache());
   const code='print(input);return DOUBLE(input);';
   assert.equal(await interpreter.executeAsync(code),4);
   interpreter.globalEnv.set('input',3);

@@ -50,7 +50,7 @@ test('compiled package exports an AST cache that can be shared across instances'
 });
 
 test('compiled package can prepare portable JSON without evaluating code', () => {
-  const interpreter = new InterpreterService();
+  const interpreter = new InterpreterService({astCache:new AstCache()});
   interpreter.compile('return unknownInput;');
   interpreter.compileFormula('return B + 1;');
   const payload=JSON.parse(JSON.stringify(interpreter.exportAstCache()));

@@ -43,16 +43,16 @@ or `variables: {'CURRENT_ROWS': [0, 0]}` in Dart. Indices are zero-based;
 `GET_CURRENT_ROW_INDEX(1)` reads the second level. The legacy `CURRENT_ROW`
 name remains supported when `CURRENT_ROWS` is absent.
 
-You can also put a directive at the beginning of a script or formula:
+Legacy metadata at the beginning of a script or formula is ignored:
 
 ```js
 #CURRENT_ROW = 0,1
-return ROW([10, 20], null, 1) // 20
+return ROW([10, 20], null, 1) // Uses variables.CURRENT_ROWS[1]
 ```
 
-The directive supplies non-negative row indices for that execution. Existing
-`CURRENT_ROWS` or legacy `CURRENT_ROW` variables take precedence. Keep the
-directive on its own line, before JavaScript statements.
+The directive does not supply row indices. Pass `CURRENT_ROWS` (or legacy
+`CURRENT_ROW`) through `variables`. Without row variables, implicit row selection
+throws an error. Keep legacy metadata on its own line before JavaScript statements.
 The following signatures use `?` for an optional argument.
 
 | Group | Functions |

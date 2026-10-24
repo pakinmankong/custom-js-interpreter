@@ -1,3 +1,5 @@
-print(_SOURCE_.GROUP1.ddd.ddd)
+#CURRENT_ROW = 0
 
-print([1, 2, 3, 4].length)
+
+
+print(ROW([1,2,3,4]))

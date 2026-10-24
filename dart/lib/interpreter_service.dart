@@ -137,7 +137,7 @@ class InterpreterService {
       r'^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?((?:\s|\/\/[^\r\n]*(?:\r?\n|$)|\/\*[\s\S]*?\*\/)*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n|\/\/)',
     );
     return source.replaceFirstMapped(pattern, (match) =>
-      '${match[1] ?? ''}${match[2]}if (typeof CURRENT_ROWS === "undefined" && typeof CURRENT_ROW === "undefined") { var CURRENT_ROWS = [${match[3]}]; }');
+      '${match[1] ?? ''}${match[2]};');
   }
 
   /// Run an imported execute() entry without needing a separate JS source file.

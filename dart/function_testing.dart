@@ -131,7 +131,7 @@ void runFunctionTests(
       throw StateError('Expected missing CURRENT_ROWS[2], got $caught');
     }
   });
-  test('row directive defaults and host overrides', () {
+  test('row directive is ignored and host variables supply indices', () {
     const code = '// row settings\n/* defaults */\n#CURRENT_ROW = 0,1 // levels\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],null,1)];';
     for (final variables in <Map<String, dynamic>>[
       {}, {'CURRENT_ROWS': [1, 0]}, {'CURRENT_ROW': [1, 0]},
@@ -141,7 +141,19 @@ void runFunctionTests(
         variables: variables,
         functions: createFunctions(getEnv: () => interpreter.currentEnv),
       ));
-      expect(interpreter.execute(code), variables.isEmpty ? [0, 1, 20] : [1, 0, 10]);
+      if (variables.isEmpty) {
+        Object? caught;
+        try {
+          interpreter.execute(code);
+        } catch (error) {
+          caught = error;
+        }
+        if (caught == null || !caught.toString().contains('CURRENT_ROW')) {
+          throw StateError('Expected missing row variables, got $caught');
+        }
+      } else {
+        expect(interpreter.execute(code), [1, 0, 10]);
+      }
     }
   });
   test('GOAL_SEEK block callback, closure and return signal', () {

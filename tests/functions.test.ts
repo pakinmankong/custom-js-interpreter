@@ -161,15 +161,15 @@ test("CURRENT_ROWS host input drives row functions and takes precedence over CUR
   assert.deepEqual(setup({ CURRENT_ROWS: [0,0] }).execute(`return [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1)];`), [0,0]);
 });
 
-test("row directive supplies defaults while host variables override it", () => {
+test("row directive is ignored and host variables supply row indices", () => {
   const code = '#CURRENT_ROW = 0,1\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],null,1)];';
-  assert.deepEqual(setup().execute(code), [0,1,20]);
-  assert.deepEqual(setup().execute('// row settings\n/* defaults */\n#CURRENT_ROW = 0,1 // levels\nreturn [GET_CURRENT_ROW_INDEX(), GET_CURRENT_ROW_INDEX(1)];'), [0,1]);
+  assert.throws(() => setup().execute(code), /CURRENT_ROW/);
+  assert.deepEqual(setup({ CURRENT_ROWS: [1,0] }).execute('// row settings\n/* defaults */\n#CURRENT_ROW = 0,1 // levels\nreturn [GET_CURRENT_ROW_INDEX(), GET_CURRENT_ROW_INDEX(1)];'), [1,0]);
   assert.deepEqual(setup({ CURRENT_ROWS: [1,0] }).execute(code), [1,0,10]);
   assert.deepEqual(setup({ CURRENT_ROW: [1,0] }).execute(code), [1,0,10]);
-  const { interpreter, execute } = setup();
+  const { interpreter, execute } = setup({ CURRENT_ROWS: [1,0] });
   interpreter.compile(code);
-  assert.deepEqual(execute(code), [0,1,20]);
+  assert.deepEqual(execute(code), [1,0,10]);
   assert.deepEqual(execute('#CURRENT_ROW = 1,0\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1)];'), [1,0]);
   assert.equal(execute('return `hello\n#CURRENT_ROW = 9,9\nworld`;'), 'hello\n#CURRENT_ROW = 9,9\nworld');
 });

@@ -67,6 +67,11 @@ var interpreter: InterpreterService = new InterpreterService({
 
 try {
   var result = interpreter.execute(`
+    #CURRENT_ROW = 2
+
+
+     print(ROW([1,2,3,4]))
+
         print("NUMBER:", NUMBER("10"))
 
         print(POWER(2, 3))

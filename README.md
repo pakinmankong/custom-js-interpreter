@@ -84,6 +84,27 @@ interpreter.execute('print("items:", [1, 2, 3]); print("done");');
 callback ทำงานแบบ synchronous และได้รับค่าที่ยังไม่แปลงเป็นข้อความ
 เมื่อกำหนด `output` จะใช้ callback นี้แทน `console.log`
 
+## แสดง error จากโค้ดที่รัน
+
+แปลง error ที่จับได้ด้วย `createInterpreterError` ก่อนส่งให้ formatter:
+
+```ts
+import { createInterpreterError, formatInterpreterError } from 'custom-js-interpreter';
+
+try {
+  interpreter.execute(code);
+} catch (error) {
+  const detail = createInterpreterError(
+    error, 'script', interpreter.lineOffset, code,
+  );
+  console.error(formatInterpreterError(detail));
+}
+```
+
+`lineOffset` หักบรรทัดของ wrapper เพื่อแสดงเลขบรรทัดในโค้ดที่ส่งเข้าไป
+ตัวแปลงรองรับทั้งตำแหน่ง syntax error (`loc.line`) และ runtime error
+(`loc.start.line`) ส่วนบรรทัด `#CURRENT_ROW` ที่ข้ามยังนับบรรทัดตามเดิม
+
 ## Semicolon
 
 โค้ดที่ส่งเข้า interpreter ไม่จำเป็นต้องใส่ `;` ท้าย statement เมื่อจบด้วย

@@ -41,7 +41,9 @@ InterpreterError createInterpreterError(
 }
 
 String formatInterpreterError(InterpreterError error, [String? sourceCode]) {
-  final lines = (sourceCode ?? error.sourceCode ?? '').split(RegExp(r'\r?\n'));
+  final lines = (sourceCode ?? error.sourceCode ?? '').split(
+    RegExp(r'\r\n|[\n\r\u2028\u2029]'),
+  );
   final line = error.line ?? 1;
   final column = error.column ?? 0;
   final text = line > 0 && line <= lines.length ? lines[line - 1] : '';

@@ -34,15 +34,16 @@ export function createInterpreterError(
     return error;
   }
 
-  var line = (error?.loc?.line ?? 1) - lineOffset;
+  var loc = error?.loc?.start ?? error?.loc;
+  var line = (loc?.line ?? error?.line ?? 1) - lineOffset;
 
   if (line < 1) {
     line = 1;
   }
 
-  var column = error?.loc?.column ?? 0;
+  var column = loc?.column ?? error?.column ?? 0;
 
-  var position = error?.position ?? error?.start ?? 0;
+  var position = error?.position ?? error?.pos ?? error?.start ?? loc?.index ?? 0;
 
   return new InterpreterError(
     error?.message ?? String(error),
@@ -60,7 +61,7 @@ export function formatInterpreterError(
 ) {
   var code = sourceCode ?? error.sourceCode ?? "";
 
-  var lines = code.split(/\r?\n/);
+  var lines = code.split(/\r\n|[\n\r\u2028\u2029]/);
 
   var lineText = lines[error.line - 1] ?? "";
 

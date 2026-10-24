@@ -1,6 +1,6 @@
 import { createFunctions } from "./lib/functions.js";
 import InterpreterService from "./lib/interpreter_service.js";
-import { InterpreterError, formatInterpreterError } from "./lib/errors.js";
+import { createInterpreterError, formatInterpreterError } from "./lib/errors.js";
 
 var interpreter: InterpreterService = new InterpreterService({
   variables: {
@@ -149,9 +149,7 @@ try {
 
   console.log("result: ", result);
 } catch (error) {
-  if (error instanceof InterpreterError) {
-    console.error(formatInterpreterError(error));
-  } else {
-    throw error;
-  }
+  console.error(formatInterpreterError(createInterpreterError(
+    error, "script", interpreter.lineOffset, interpreter.userCode,
+  )));
 }

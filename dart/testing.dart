@@ -172,6 +172,28 @@ void main() {
         throw StateError('Missing error message');
     }
   });
+  test('external error formatting preserves metadata lines and newline types', () {
+    for (final newline in ['\n', '\r\n', '\r', '\u2028', '\u2029']) {
+      final code = '#CURRENT_ROW=0,1${newline}sdfds';
+      final interpreter = InterpreterService();
+      Object? caught;
+      try {
+        interpreter.execute(code);
+      } catch (error) {
+        caught = error;
+      }
+      if (caught == null) throw StateError('Expected undefined variable error');
+      final error = createInterpreterError(caught, 'script', interpreter.lineOffset, code);
+      expect(error.line, 2);
+      expect(error.column, 0);
+      if (!formatInterpreterError(error).contains('> 2 | sdfds')) {
+        throw StateError('Incorrect source line in formatted error');
+      }
+      if (!identical(createInterpreterError(error, 'script', 1), error)) {
+        throw StateError('InterpreterError should not have its offset subtracted twice');
+      }
+    }
+  });
   test('example math functions ported from index.ts', () {
     final interpreter = InterpreterService(
       InterpreterContext(functions: createExampleFunctions()),

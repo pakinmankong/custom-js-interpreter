@@ -227,7 +227,7 @@ Future<void> main() async {
         );
         expect(error.line, 2);
         expect(error.column, 0);
-        if (!formatInterpreterError(error).contains('error at line 2,')) {
+        if (!formatInterpreterError(error).contains('error at line 2')) {
           throw StateError('Incorrect source line in formatted error');
         }
         if (!identical(createInterpreterError(error, 'script', 1), error)) {
@@ -266,7 +266,7 @@ Future<void> main() async {
     expect(error.source, 'DATA.field');
     expect(error.sourceCode, formula);
     expect(error.line, 1);
-    if (!formatInterpreterError(error).contains('DATA.field error at line 1,')) {
+    if (!formatInterpreterError(error).contains('DATA.field error at line 1')) {
       throw StateError('Expected formula source in error');
     }
     expect(interpreter.dataResolver.evaluating.length, 0);

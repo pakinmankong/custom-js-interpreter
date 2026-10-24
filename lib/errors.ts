@@ -69,7 +69,7 @@ export function formatInterpreterError(
   sourceCode?: string,
 ) {
   return [
-    `${error.source} error at line ${error.line}, column ${error.column}, position ${error.position}, length ${error.length}`,
+    `${error.source} error at line ${error.line}`,
     "",
     error.message,
   ].join("\n");

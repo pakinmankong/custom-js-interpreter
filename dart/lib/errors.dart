@@ -51,8 +51,6 @@ InterpreterError createInterpreterError(
 
 String formatInterpreterError(InterpreterError error, [String? sourceCode]) {
   final line = error.line ?? 1;
-  final column = error.column ?? 0;
-  final length = error.length ?? 1;
-  return '${error.source} error at line $line, column $column, position ${error.position}, length $length\n\n'
+  return '${error.source} error at line $line\n\n'
       '${error.message}';
 }

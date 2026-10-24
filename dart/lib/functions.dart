@@ -160,12 +160,16 @@ Map<String, dynamic> createFunctions({
 
   int currentRow(dynamic level) {
     final i = _integer(level, 'GET_CURRENT_ROW_INDEX', 'level');
-    final rows = envValue('CURRENT_ROW');
+    final env = getEnv?.call();
+    final name = env != null && env.has('CURRENT_ROWS')
+        ? 'CURRENT_ROWS'
+        : 'CURRENT_ROW';
+    final rows = env != null && env.has(name) ? env.get(name) : undefined;
     if (rows is! List ||
         i < 0 ||
         i >= rows.length ||
         identical(rows[i], undefined))
-      throw JsError('CURRENT_ROW[$i] is required');
+      throw JsError('$name[$i] is required');
     return _integer(rows[i], 'GET_CURRENT_ROW_INDEX', 'row index');
   }
 

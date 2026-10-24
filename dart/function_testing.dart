@@ -112,6 +112,38 @@ void runFunctionTests(
       },
     );
   }
+  test('CURRENT_ROWS host input and legacy precedence', () {
+    late final InterpreterService interpreter;
+    interpreter = InterpreterService(InterpreterContext(
+      variables: {'CURRENT_ROWS': [0, 1], 'CURRENT_ROW': [1, 0]},
+      functions: createFunctions(getEnv: () => interpreter.currentEnv),
+    ));
+    expect(interpreter.execute(
+      'return [ROW([10,20]),ROW([10,20],null,1),GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],1)];',
+    ), [10, 20, 0, 1, 20]);
+    Object? caught;
+    try {
+      interpreter.execute('return GET_CURRENT_ROW_INDEX(2);');
+    } catch (error) {
+      caught = error;
+    }
+    if (caught == null || !caught.toString().contains('CURRENT_ROWS[2]')) {
+      throw StateError('Expected missing CURRENT_ROWS[2], got $caught');
+    }
+  });
+  test('row directive defaults and host overrides', () {
+    const code = '#CURRENT_ROW = 0,1\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],null,1)];';
+    for (final variables in <Map<String, dynamic>>[
+      {}, {'CURRENT_ROWS': [1, 0]}, {'CURRENT_ROW': [1, 0]},
+    ]) {
+      late final InterpreterService interpreter;
+      interpreter = InterpreterService(InterpreterContext(
+        variables: variables,
+        functions: createFunctions(getEnv: () => interpreter.currentEnv),
+      ));
+      expect(interpreter.execute(code), variables.isEmpty ? [0, 1, 20] : [1, 0, 10]);
+    }
+  });
   test('GOAL_SEEK block callback, closure and return signal', () {
     final interpreter = InterpreterService(
       InterpreterContext(functions: createFunctions()),

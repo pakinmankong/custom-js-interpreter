@@ -4,6 +4,7 @@ import { InterpreterError, formatInterpreterError } from "./lib/errors.js";
 
 var interpreter: InterpreterService = new InterpreterService({
   variables: {
+    CURRENT_ROWS: [0, 0],
     _SOURCE_: {
       GROUP1: {
         ddd: {

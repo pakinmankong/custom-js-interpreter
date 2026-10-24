@@ -26,10 +26,6 @@ function createBaseFunctions() {
       console.log(...values);
     },
 
-    
-
-    
-
     NUMBER: (value: any) => {
       if (typeof value === "undefined") {
         throw new Error(
@@ -39,10 +35,6 @@ function createBaseFunctions() {
 
       return Number(value);
     },
-
-    
-
-    
 
     DECIMAL_PLACES: (value: any) => {
       if (typeof value === "undefined") {
@@ -326,8 +318,6 @@ function createBaseFunctions() {
       return Math.random();
     },
 
-    
-
     MIN: function (...values: any) {
       if (typeof values === "undefined") {
         throw new Error(
@@ -570,9 +560,11 @@ export function createFunctions(options: FunctionsOptions = {}) {
   }
   function currentRow(level: any = 0): number {
     const index = integer(level, "GET_CURRENT_ROW_INDEX", "level");
-    const rows = envValue("CURRENT_ROW");
+    const env = options.getEnv?.();
+    const name = env?.has("CURRENT_ROWS") ? "CURRENT_ROWS" : "CURRENT_ROW";
+    const rows = env?.has(name) ? env.get(name) : undefined;
     if (!Array.isArray(rows) || index < 0 || rows[index] === undefined)
-      throw new Error(`CURRENT_ROW[${index}] is required`);
+      throw new Error(`${name}[${index}] is required`);
     return integer(rows[index], "GET_CURRENT_ROW_INDEX", "row index");
   }
   function standards(id: any): Record<string, any>[] {

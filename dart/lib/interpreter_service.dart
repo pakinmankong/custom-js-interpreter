@@ -129,7 +129,15 @@ class InterpreterService {
     if (cached != null) return cached;
     if (context.requireCachedAst)
       throw JsError('AST cache miss: source was not included in the bundle');
-    return JsParser(source).parse();
+    return JsParser(_expandRowDirective(source)).parse();
+  }
+
+  String _expandRowDirective(String source) {
+    final pattern = RegExp(
+      r'^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?([\t \r\n]*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n)',
+    );
+    return source.replaceFirstMapped(pattern, (match) =>
+      '${match[1] ?? ''}${match[2]}if (typeof CURRENT_ROWS === "undefined" && typeof CURRENT_ROW === "undefined") { var CURRENT_ROWS = [${match[3]}]; }');
   }
 
   /// Run an imported execute() entry without needing a separate JS source file.
@@ -652,6 +660,11 @@ class InterpreterService {
   }
 
   dynamic evaluateUnaryExpression(Node node, Env env) {
+    if (node['operator'] == 'typeof' &&
+        node['argument']['type'] == 'Identifier' &&
+        !env.has(node['argument']['name'])) {
+      return 'undefined';
+    }
     final argument = evaluate(node['argument'], env);
     switch (node['operator']) {
       case '+':

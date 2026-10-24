@@ -18,7 +18,7 @@ const standardErrors: Record<string, Record<string, any>[]> = {
 let interpreter: InterpreterService;
 interpreter = new InterpreterService({
   variables: {
-    CURRENT_ROW: [0],
+    CURRENT_ROWS: [0, 0],
     _UNIT_: { '1': { ID: 1, SYMBOL: 'm', NAME: 'metre' } },
   },
   functions: createFunctions({
@@ -37,7 +37,22 @@ interpreter.execute('return FIND_STD_ERROR(1, 15);');
 ```
 
 `getEnv` is required for implicit row selection and the `_UNIT_` cache. It reads
-`currentEnv`, so CURRENT_ROW declared inside interpreted functions also works.
+`currentEnv`, so CURRENT_ROWS declared inside interpreted functions also works.
+Pass `variables: { CURRENT_ROWS: [0, 0] }` to the interpreter context in TS,
+or `variables: {'CURRENT_ROWS': [0, 0]}` in Dart. Indices are zero-based;
+`GET_CURRENT_ROW_INDEX(1)` reads the second level. The legacy `CURRENT_ROW`
+name remains supported when `CURRENT_ROWS` is absent.
+
+You can also put a directive at the beginning of a script or formula:
+
+```js
+#CURRENT_ROW = 0,1
+return ROW([10, 20], null, 1) // 20
+```
+
+The directive supplies non-negative row indices for that execution. Existing
+`CURRENT_ROWS` or legacy `CURRENT_ROW` variables take precedence. Keep the
+directive on its own line, before JavaScript statements.
 The following signatures use `?` for an optional argument.
 
 | Group | Functions |
@@ -68,8 +83,8 @@ The following signatures use `?` for an optional argument.
   This implementation defines mode 0 as exact (first match), 1 as last <= lookup
   in ascending input, and -1 as last >= lookup in descending input. No match
   returns -1. Inputs for approximate matching must be sorted in that order.
-- ROW uses CURRENT_ROW[level] unless manualIndex is supplied and is neither null
-  nor false. An explicit index needs no CURRENT_ROW context.
+- ROW uses CURRENT_ROWS[level] (falling back to CURRENT_ROW) unless manualIndex
+  is supplied and is neither null nor false. An explicit index needs no row context.
 - SUM(data, key) sums that field from an array/object of records. Existing
   variadic/nested-array SUM, MIN, MAX, AVERAGE, STDEV and SUMSQ remain available.
   AVERAGE([]) and STDEV([]) return 0; a singleton STDEV returns NaN.

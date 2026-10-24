@@ -154,6 +154,25 @@ test("validation and TREND checks missing knownXValues", () => {
   assert.equal(execute(`return RANDBETWEEN("2.9","2.9");`),2);
 });
 
+test("CURRENT_ROWS host input drives row functions and takes precedence over CURRENT_ROW", () => {
+  const { execute } = setup({ CURRENT_ROWS: [0, 1], CURRENT_ROW: [1, 0] });
+  assert.deepEqual(execute(`return [ROW([10,20]),ROW([10,20],null,1),GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],1)];`), [10,20,0,1,20]);
+  assert.throws(() => execute(`return GET_CURRENT_ROW_INDEX(2);`), /CURRENT_ROWS\[2\]/);
+  assert.deepEqual(setup({ CURRENT_ROWS: [0,0] }).execute(`return [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1)];`), [0,0]);
+});
+
+test("row directive supplies defaults while host variables override it", () => {
+  const code = '#CURRENT_ROW = 0,1\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],null,1)];';
+  assert.deepEqual(setup().execute(code), [0,1,20]);
+  assert.deepEqual(setup({ CURRENT_ROWS: [1,0] }).execute(code), [1,0,10]);
+  assert.deepEqual(setup({ CURRENT_ROW: [1,0] }).execute(code), [1,0,10]);
+  const { interpreter, execute } = setup();
+  interpreter.compile(code);
+  assert.deepEqual(execute(code), [0,1,20]);
+  assert.deepEqual(execute('#CURRENT_ROW = 1,0\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1)];'), [1,0]);
+  assert.equal(execute('return `hello\n#CURRENT_ROW = 9,9\nworld`;'), 'hello\n#CURRENT_ROW = 9,9\nworld');
+});
+
 test("existing numeric functions still work and print is injectable", () => {
   const { execute, calls } = setup();
   assert.deepEqual(execute(`print("ok");return [NUMBER("2"),EXP(0),SUMSQ(1,2,3),TREND([2,4,6],[1,2,3],4),MIN([3,1]),MAX(1,3),ABS(-1),SQRT(4),POWER(2,3),LOG(100),DECIMAL_PLACES(1.25),ROUND(1.25,1),SIG(0)];`),[2,1,14,8,1,3,1,2,8,2,2,1.3,"0"]);

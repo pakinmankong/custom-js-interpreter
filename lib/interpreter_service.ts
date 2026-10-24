@@ -88,7 +88,7 @@ export default class InterpreterService {
   }
 
   parse(source: string) {
-    const parseSource = () => parser.parse(source, {
+    const parseSource = () => parser.parse(this.expandRowDirective(source), {
       sourceType: "script",
 
       plugins: [
@@ -101,6 +101,15 @@ export default class InterpreterService {
     });
 
     return this.astCache ? this.astCache.getOrParse(source, parseSource) : parseSource();
+  }
+
+  /** A row directive is allowed at the beginning of a main script or formula. */
+  private expandRowDirective(source: string): string {
+    return source.replace(
+      /^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?([\t \r\n]*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n)/,
+      (_match, wrapper = "", whitespace, values) =>
+        `${wrapper}${whitespace}if (typeof CURRENT_ROWS === "undefined" && typeof CURRENT_ROW === "undefined") { var CURRENT_ROWS = [${values}]; }`,
+    );
   }
 
   clearAstCache() {
@@ -1069,6 +1078,9 @@ export default class InterpreterService {
   }
 
   evaluateUnaryExpression(node: any, env: Env) {
+    if (node.operator === "typeof" && node.argument.type === "Identifier" && !env.has(node.argument.name)) {
+      return "undefined";
+    }
     var argument = this.evaluate(node.argument, env);
 
     switch (node.operator) {

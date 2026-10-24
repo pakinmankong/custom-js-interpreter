@@ -187,4 +187,23 @@ void runAstCacheTests(
       throw StateError('Strict mode must reject a formula not in the bundle');
     }
   });
+  test(
+    'automatic semicolon insertion rejects adjacent same-line statements',
+    () {
+      for (final code in [
+        'var a=1 var b=2',
+        'var text=`a\nb` var n=2',
+        'var text="a\nb"',
+      ]) {
+        var rejected = false;
+        try {
+          InterpreterService().execute(code);
+        } on JsError {
+          rejected = true;
+        }
+        if (!rejected)
+          throw StateError('Expected invalid source to be rejected: $code');
+      }
+    },
+  );
 }

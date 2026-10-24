@@ -1,10 +1,10 @@
 # TypeScript / Dart parity audit
 
-The direct comparison currently passes **326/326 cases**:
+The direct comparison currently passes **345/345 cases**:
 
 | Area | Cases |
 | --- | ---: |
-| Shared basic syntax and scope fixtures | 42 |
+| Shared basic syntax, scope and optional-semicolon fixtures | 61 |
 | All 51 formula functions plus print, edge/error cases and TINV grid | 162 |
 | Extended runtime, host callback and DataResolver cases | 122 |
 
@@ -21,9 +21,9 @@ dart dart/testing.dart
 dart analyze dart
 ```
 
-Separate regression suites pass 206 TS tests and 216 Dart tests. Their counts
+Separate regression suites pass 247 TS tests and 242 Dart tests. Their counts
 are different because some platform-specific setup/validation tests are separate;
-the direct comparison above executes exactly the same 326 input cases on both.
+the direct comparison above executes exactly the same 345 input cases on both.
 The library smoke test also compiles/runs as Dart native and Dart-to-JS.
 
 ## Covered behavior
@@ -89,7 +89,7 @@ node dart/tool/export_function_fixtures.mjs
 
 ## AST JSON transfer
 
-`npm run test:ast-json` runs the same 326 cases after executing on TS and exporting
+`npm run test:ast-json` runs the same 345 cases after executing on TS and exporting
 its versioned AST cache. Dart receives that JSON, with source parsing disabled by
 `requireCachedAst: true`. Results, captured outputs and expected error patterns
 are compared as in source mode. This also verifies formula entries, Babel

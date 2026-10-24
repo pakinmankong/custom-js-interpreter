@@ -63,6 +63,22 @@ const interpreter = new InterpreterService({
 console.log(interpreter.execute('return DOUBLE(5);')); // 10
 ```
 
+## Semicolon
+
+โค้ดที่ส่งเข้า interpreter ไม่จำเป็นต้องใส่ `;` ท้าย statement เมื่อจบด้วย
+newline, `}` หรือท้ายโค้ด ตามกติกา automatic semicolon insertion ของ JavaScript
+ทั้ง TS และ Dart รองรับ เช่น:
+
+```js
+const values = [1, 2, 3]
+const doubled = values.map(value => value * 2)
+return doubled
+```
+
+newline ที่ยังต่อ expression ได้จะไม่แยก statement เช่น `.map(...)`, `[index]`
+หรือ `(args)` และ expression ของ `return` ต้องเริ่มบรรทัดเดียวกับ `return`
+ส่วน `;` สองตัวที่คั่นส่วนต่าง ๆ ใน `for (init; test; update)` ยังต้องใส่
+
 ## Public exports
 
 - Default export และ `InterpreterService`

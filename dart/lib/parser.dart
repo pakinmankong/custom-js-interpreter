@@ -7,9 +7,23 @@ class Token {
   final String text;
   final String kind;
   final dynamic value;
-  final int start, line, column;
-  Token(this.text, this.kind, this.value, this.start, this.line, this.column);
+  final int start, line, column, endLine;
+  Token(
+    this.text,
+    this.kind,
+    this.value,
+    this.start,
+    this.line,
+    this.column,
+    this.endLine,
+  );
 }
+
+bool _isLineTerminator(String character) =>
+    character == '\n' ||
+    character == '\r' ||
+    character == '\u2028' ||
+    character == '\u2029';
 
 /// Parser for the syntax evaluated by InterpreterService, not a full ECMAScript parser.
 class JsParser {
@@ -50,8 +64,9 @@ class JsParser {
   void _tokenize() {
     int i = 0, line = 1, column = 0;
     void advance() {
-      if (source[i] == '\n') {
-        line++;
+      if (_isLineTerminator(source[i])) {
+        // CRLF is one line break, as in Babel/JavaScript ASI.
+        if (source[i] != '\n' || i == 0 || source[i - 1] != '\r') line++;
         column = 0;
       } else {
         column++;
@@ -89,7 +104,7 @@ class JsParser {
         continue;
       }
       if (source.startsWith('//', i)) {
-        while (i < source.length && source[i] != '\n') {
+        while (i < source.length && !_isLineTerminator(source[i])) {
           advance();
         }
         continue;
@@ -148,7 +163,7 @@ class JsParser {
           if (source[i] == '[') inClass = true;
           if (source[i] == ']') inClass = false;
           if (source[i] == '/' && !inClass) break;
-          if (source[i] == '\n')
+          if (_isLineTerminator(source[i]))
             throw JsError('Unterminated regular expression');
           pattern.write(source[i]);
           advance();
@@ -179,6 +194,12 @@ class JsParser {
           if (source[i] == r'\') {
             advance();
             if (i >= source.length) break;
+            if (_isLineTerminator(source[i])) {
+              final cr = source[i] == '\r';
+              advance();
+              if (cr && i < source.length && source[i] == '\n') advance();
+              continue;
+            }
             const escapes = {
               'n': '\n',
               'r': '\r',
@@ -204,6 +225,13 @@ class JsParser {
             buffer.write(escapes[source[i]] ?? source[i]);
             advance();
           } else {
+            if (source[i] == '\n' || source[i] == '\r')
+              throw JsError(
+                'Unterminated string',
+                line: startLine,
+                column: startColumn,
+                position: start,
+              );
             buffer.write(source[i]);
             advance();
           }
@@ -266,10 +294,11 @@ class JsParser {
           start,
           startLine,
           startColumn,
+          line,
         ),
       );
     }
-    tokens.add(Token('<eof>', 'eof', null, i, line, column));
+    tokens.add(Token('<eof>', 'eof', null, i, line, column, line));
   }
 
   Node parse() {
@@ -283,7 +312,7 @@ class JsParser {
 
   void semicolon() {
     if (take(';') || at('}') || token.kind == 'eof') return;
-    if (cursor > 0 && token.line > tokens[cursor - 1].line) return;
+    if (cursor > 0 && token.line > tokens[cursor - 1].endLine) return;
     fail('Expected semicolon');
   }
 
@@ -554,7 +583,7 @@ class JsParser {
         left = node('CallExpression', t, {'callee': left, 'arguments': args});
         continue;
       }
-      if ((at('++') || at('--')) && token.line == tokens[cursor - 1].line) {
+      if ((at('++') || at('--')) && token.line == tokens[cursor - 1].endLine) {
         final op = token.text;
         cursor++;
         left = node('UpdateExpression', t, {

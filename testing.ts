@@ -1,4 +1,5 @@
 import "./tests/basic.test.js";
+import "./tests/semicolon.test.js";
 import "./tests/ast_cache.test.js";
 import "./tests/functions.test.js";
 import assert from "node:assert/strict";

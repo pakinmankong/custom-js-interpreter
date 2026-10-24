@@ -52,7 +52,7 @@ int _expressionEnd(String source, int start) {
       continue;
     }
     if (source.startsWith('//', i)) {
-      while (i < source.length && source[i] != '\n') {
+      while (i < source.length && !'\n\r\u2028\u2029'.contains(source[i])) {
         i++;
       }
       continue;
@@ -74,6 +74,7 @@ int _expressionEnd(String source, int start) {
 }
 
 String cookTemplate(String raw) {
+  raw = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
   final result = StringBuffer();
   for (var i = 0; i < raw.length; i++) {
     if (raw[i] != r'\') {

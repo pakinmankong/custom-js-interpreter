@@ -239,3 +239,11 @@ services ใน `code.dart` เหมือนเดิม
 สำหรับ Flutter ไม่ต้องใช้ CLI นี้ ใช้ `InterpreterContext(astBundle: bundle)`
 แล้ว `execute(code)` ได้ทั้ง cached AST และ fallback parser; หากไม่มี bundle
 จะ parse source เองตามปกติ ใช้ `executeCached()` เมื่อต้องการเลือก main จาก JSON
+
+## ไม่บังคับ semicolon ท้าย statement
+
+รองรับการจบ statement ด้วย newline, `}` หรือท้ายโค้ด ตาม JavaScript ASI ทั้ง
+LF, CRLF, CR และ Unicode line separators ใช้งานได้โดยไม่ต้องเติม `;` ทุกบรรทัด
+newline ไม่ได้แยก statement เสมอไป เช่น method chain, array access หรือ function
+call ที่ต่อจาก expression ก่อนหน้า และ `return` ที่ขึ้นบรรทัดใหม่ก่อน expression
+จะคืน undefined ส่วน separators ใน `for (init; test; update)` ยังต้องใส่

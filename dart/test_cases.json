@@ -363,5 +363,115 @@
     "name": "const ++value",
     "code": "const value=1; ++value;",
     "error": "Assignment to constant variable: value"
+  },
+  {
+    "name": "optional semicolon: declarations and assignments",
+    "code": "var a = 1\nlet b = 2\nconst c = 3\na += b\nreturn [a, b, c]",
+    "expected": [
+      3,
+      2,
+      3
+    ]
+  },
+  {
+    "name": "optional semicolon: functions arrow and calls",
+    "code": "function add(a,b) {\nreturn a + b\n}\nconst double = value => value * 2\nreturn double(add(1,2))",
+    "expected": 6
+  },
+  {
+    "name": "optional semicolon: loop if continue break",
+    "code": "var total = 0\nfor (var i=0; i<6; i++) {\nif (i === 2) continue\nif (i === 5) break\ntotal += i\n}\nreturn total",
+    "expected": 8
+  },
+  {
+    "name": "optional semicolon: multiline expression",
+    "code": "const total = 1\n + 2\n + 3\nreturn total",
+    "expected": 6
+  },
+  {
+    "name": "optional semicolon: multiline method chain",
+    "code": "const values = [1,2,3]\n .map(value => value * 2)\n .filter(value => value > 2)\nreturn values",
+    "expected": [
+      4,
+      6
+    ]
+  },
+  {
+    "name": "optional semicolon: return newline follows JS ASI",
+    "code": "function read() {\nreturn\n99\n}\nreturn read()",
+    "expected": {
+      "$undefined": true
+    }
+  },
+  {
+    "name": "optional semicolon: array access continues expression",
+    "code": "const value = [10,20]\n[0]\nreturn value",
+    "expected": 10
+  },
+  {
+    "name": "optional semicolon: call continues expression",
+    "code": "function f(value) { return value + 1 }\nconst value = f\n(2)\nreturn value",
+    "expected": 3
+  },
+  {
+    "name": "optional semicolon: postfix versus next-line prefix",
+    "code": "var a=1\nvar b=2\na\n++b\nreturn [a,b]",
+    "expected": [
+      1,
+      3
+    ]
+  },
+  {
+    "name": "optional semicolon: do while automatic terminator",
+    "code": "var n=0\ndo { n++ } while (n<2) return n",
+    "expected": 2
+  },
+  {
+    "name": "optional semicolon: block comment newline separates statements",
+    "code": "var a=1 /* comment\nend */ var b=2\nreturn a+b",
+    "expected": 3
+  },
+  {
+    "name": "optional semicolon: multiline template and next statement",
+    "code": "const text = `a\nb`\nconst n=2\nreturn [text,n]",
+    "expected": [
+      "a\nb",
+      2
+    ]
+  },
+  {
+    "name": "optional semicolon: LF and line comments",
+    "code": "var a=1 // comment\nvar b=2\nreturn a+b",
+    "expected": 3
+  },
+  {
+    "name": "optional semicolon: CRLF and line comments",
+    "code": "var a=1 // comment\r\nvar b=2\r\nreturn a+b",
+    "expected": 3
+  },
+  {
+    "name": "optional semicolon: CR and line comments",
+    "code": "var a=1 // comment\rvar b=2\rreturn a+b",
+    "expected": 3
+  },
+  {
+    "name": "optional semicolon: line separator and line comments",
+    "code": "var a=1 // comment var b=2 return a+b",
+    "expected": 3
+  },
+  {
+    "name": "optional semicolon: paragraph separator and line comments",
+    "code": "var a=1 // comment var b=2 return a+b",
+    "expected": 3
+  },
+  {
+    "name": "optional semicolon: line continuation in quoted string",
+    "code": "const value = 'a\\\nb'\nreturn value",
+    "expected": "ab"
+  },
+  {
+    "name": "optional semicolon: CRLF template cooking",
+    "code": "const value = `a\r\nb`\r\nreturn value",
+    "expected": "a\nb"
   }
 ]

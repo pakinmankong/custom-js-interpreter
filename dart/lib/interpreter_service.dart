@@ -134,7 +134,7 @@ class InterpreterService {
 
   String _expandRowDirective(String source) {
     final pattern = RegExp(
-      r'^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?([\t \r\n]*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n)',
+      r'^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?((?:\s|\/\/[^\r\n]*(?:\r?\n|$)|\/\*[\s\S]*?\*\/)*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n|\/\/)',
     );
     return source.replaceFirstMapped(pattern, (match) =>
       '${match[1] ?? ''}${match[2]}if (typeof CURRENT_ROWS === "undefined" && typeof CURRENT_ROW === "undefined") { var CURRENT_ROWS = [${match[3]}]; }');

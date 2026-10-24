@@ -132,7 +132,7 @@ void runFunctionTests(
     }
   });
   test('row directive defaults and host overrides', () {
-    const code = '#CURRENT_ROW = 0,1\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],null,1)];';
+    const code = '// row settings\n/* defaults */\n#CURRENT_ROW = 0,1 // levels\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],null,1)];';
     for (final variables in <Map<String, dynamic>>[
       {}, {'CURRENT_ROWS': [1, 0]}, {'CURRENT_ROW': [1, 0]},
     ]) {

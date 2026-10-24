@@ -106,7 +106,7 @@ export default class InterpreterService {
   /** A row directive is allowed at the beginning of a main script or formula. */
   private expandRowDirective(source: string): string {
     return source.replace(
-      /^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?([\t \r\n]*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n)/,
+      /^(function __(?:USER_MAIN|FORMULA)__\(\) \{\n)?((?:\s|\/\/[^\r\n]*(?:\r?\n|$)|\/\*[\s\S]*?\*\/)*)#CURRENT_ROW[\t ]*=[\t ]*(\d+(?:[\t ]*,[\t ]*\d+)*)[\t ]*;?[\t ]*(?=\r?$|\n|\/\/)/,
       (_match, wrapper = "", whitespace, values) =>
         `${wrapper}${whitespace}if (typeof CURRENT_ROWS === "undefined" && typeof CURRENT_ROW === "undefined") { var CURRENT_ROWS = [${values}]; }`,
     );

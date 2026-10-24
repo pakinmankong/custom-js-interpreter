@@ -164,6 +164,7 @@ test("CURRENT_ROWS host input drives row functions and takes precedence over CUR
 test("row directive supplies defaults while host variables override it", () => {
   const code = '#CURRENT_ROW = 0,1\nreturn [GET_CURRENT_ROW_INDEX(),GET_CURRENT_ROW_INDEX(1),ROW([10,20],null,1)];';
   assert.deepEqual(setup().execute(code), [0,1,20]);
+  assert.deepEqual(setup().execute('// row settings\n/* defaults */\n#CURRENT_ROW = 0,1 // levels\nreturn [GET_CURRENT_ROW_INDEX(), GET_CURRENT_ROW_INDEX(1)];'), [0,1]);
   assert.deepEqual(setup({ CURRENT_ROWS: [1,0] }).execute(code), [1,0,10]);
   assert.deepEqual(setup({ CURRENT_ROW: [1,0] }).execute(code), [1,0,10]);
   const { interpreter, execute } = setup();

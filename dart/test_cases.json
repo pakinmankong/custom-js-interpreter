@@ -473,5 +473,46 @@
     "name": "optional semicolon: CRLF template cooking",
     "code": "const value = `a\r\nb`\r\nreturn value",
     "expected": "a\nb"
+  },
+  {
+    "name": "script without return yields undefined after expression",
+    "code": "1 + 2;",
+    "expected": {
+      "$undefined": true
+    }
+  },
+  {
+    "name": "script without return yields undefined after declaration",
+    "code": "var value = 42;",
+    "expected": {
+      "$undefined": true
+    }
+  },
+  {
+    "name": "block functions require explicit return while expression arrows return values",
+    "code": "function fn(){42;} const block=()=>{42;}; const expression=()=>42; return [fn(),block(),expression()];",
+    "expected": [
+      {
+        "$undefined": true
+      },
+      {
+        "$undefined": true
+      },
+      42
+    ]
+  },
+  {
+    "name": "bare return and fallthrough yield undefined and explicit null is preserved",
+    "code": "function fn(flag){if(flag){return 5;} 42;} function bare(){return;} return [fn(true),fn(false),bare(),(()=>null)()];",
+    "expected": [
+      5,
+      {
+        "$undefined": true
+      },
+      {
+        "$undefined": true
+      },
+      null
+    ]
   }
 ]

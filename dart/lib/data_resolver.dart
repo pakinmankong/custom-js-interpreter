@@ -78,6 +78,8 @@ class DataResolver {
       final value = interpreter.evaluateFormula(formula, rootName, path, env);
       cache[key] = value;
       return value;
+    } catch (error) {
+      throw createInterpreterError(error, key, 1, formula);
     } finally {
       evaluating.removeLast();
     }

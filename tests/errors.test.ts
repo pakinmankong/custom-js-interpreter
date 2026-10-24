@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import InterpreterService from "../lib/interpreter_service.js";
 import { createInterpreterError, formatInterpreterError } from "../lib/errors.js";
+import { createFunctions } from "../lib/functions.js";
 
 test("external runtime error formatting uses node loc.start and preserves directive lines", () => {
   const interpreter = new InterpreterService();
@@ -47,4 +48,23 @@ test("runtime line formatting supports every JavaScript newline after ignored me
       return true;
     });
   }
+});
+
+test("nested data formula errors retain the actual source rather than the caller script", () => {
+  const formula = 'return 123invalid';
+  let interpreter: InterpreterService;
+  interpreter = new InterpreterService({
+    variables: { CURRENT_ROWS: [0], _RECORDS_: { MAIN_GROUP: { formula } } },
+    functions: createFunctions({getEnv: () => interpreter.currentEnv}),
+  });
+  const code = 'var point = ROW(_RECORDS_.MAIN_GROUP); return point;';
+  assert.throws(() => interpreter.execute(code), (raw: any) => {
+    const error = createInterpreterError(raw, 'script', interpreter.lineOffset, code);
+    assert.equal(error.source, '_RECORDS_.MAIN_GROUP');
+    assert.equal(error.sourceCode, formula);
+    assert.equal(error.line, 1);
+    assert.match(formatInterpreterError(error), /> 1 \| return 123invalid/);
+    assert.equal(interpreter.dataResolver.evaluating.length, 0);
+    return true;
+  });
 });

@@ -59,7 +59,8 @@ class InterpreterFunction implements JsCallable {
     final previous = interpreter.currentEnv;
     interpreter.currentEnv = env;
     try {
-      return interpreter.evaluate(node['body'], env);
+      final result = interpreter.evaluate(node['body'], env);
+      return node['body']['type'] == 'BlockStatement' ? undefined : result;
     } finally {
       interpreter.currentEnv = previous;
     }

@@ -335,7 +335,8 @@ export default class InterpreterService {
       self.currentEnv = functionEnv;
 
       try {
-        return self.evaluate(node.body, functionEnv);
+        const result = self.evaluate(node.body, functionEnv);
+        return node.body.type === "BlockStatement" ? undefined : result;
       } finally {
         self.currentEnv = previousEnv;
       }

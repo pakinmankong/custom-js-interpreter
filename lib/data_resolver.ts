@@ -1,5 +1,6 @@
 import type InterpreterService from "./interpreter_service.js";
 import Env from "./env.js";
+import { createInterpreterError } from "./errors.js";
 
 export default class DataResolver {
   interpreter: InterpreterService;
@@ -176,6 +177,8 @@ export default class DataResolver {
       this.cache.set(key, value);
 
       return value;
+    } catch (error) {
+      throw createInterpreterError(error, key, 1, formula);
     } finally {
       this.evaluating.pop();
     }

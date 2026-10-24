@@ -194,6 +194,27 @@ void main() {
       }
     }
   });
+  test('nested formula error formatting retains original source', () {
+    const formula = 'return 123invalid';
+    final interpreter = InterpreterService(InterpreterContext(
+      variables: {'DATA': {'field': {'formula': formula}}},
+    ));
+    Object? caught;
+    try {
+      interpreter.execute('return DATA.field;');
+    } catch (error) {
+      caught = error;
+    }
+    if (caught == null) throw StateError('Expected formula error');
+    final error = createInterpreterError(caught, 'script', 1, 'return DATA.field;');
+    expect(error.source, 'DATA.field');
+    expect(error.sourceCode, formula);
+    expect(error.line, 1);
+    if (!formatInterpreterError(error).contains('> 1 | $formula')) {
+      throw StateError('Expected formula source in error');
+    }
+    expect(interpreter.dataResolver.evaluating.length, 0);
+  });
   test('example math functions ported from index.ts', () {
     final interpreter = InterpreterService(
       InterpreterContext(functions: createExampleFunctions()),

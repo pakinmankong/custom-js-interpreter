@@ -8,6 +8,11 @@ import 'compiled_ast_bundle.dart';
 export 'runtime.dart' show undefined, JsUndefined, NativeFunction, jsString;
 part 'async_evaluator.dart';
 
+int _nodeLength(Node node) {
+  final start = node['start'], end = node['end'];
+  return start is int && end is int && end > start ? end - start : 1;
+}
+
 class InterpreterContext {
   final bool resolver;
   final Map<String, dynamic> variables;
@@ -434,6 +439,7 @@ class InterpreterService {
       error.line ??= node['line'];
       error.column ??= node['column'];
       error.position ??= node['start'];
+      error.length ??= _nodeLength(node);
       rethrow;
     }
   }

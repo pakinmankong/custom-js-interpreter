@@ -3,7 +3,8 @@ class JsError implements Exception {
   int? line;
   int? column;
   int? position;
-  JsError(this.message, {this.line, this.column, this.position});
+  int? length;
+  JsError(this.message, {this.line, this.column, this.position, this.length});
   @override
   String toString() => message;
 }
@@ -18,7 +19,14 @@ class InterpreterError extends JsError {
     int column,
     int position, [
     this.sourceCode,
-  ]) : super(message, line: line, column: column, position: position);
+    int length = 1,
+  ]) : super(
+         message,
+         line: line,
+         column: column,
+         position: position,
+         length: length < 1 ? 1 : length,
+       );
 }
 
 InterpreterError createInterpreterError(
@@ -37,6 +45,7 @@ InterpreterError createInterpreterError(
     js.column ?? 0,
     js.position ?? 0,
     sourceCode,
+    js.length ?? 1,
   );
 }
 
@@ -47,6 +56,9 @@ String formatInterpreterError(InterpreterError error, [String? sourceCode]) {
   final line = error.line ?? 1;
   final column = error.column ?? 0;
   final text = line > 0 && line <= lines.length ? lines[line - 1] : '';
-  return '${error.source} error at line $line, column $column, position ${error.position}\n\n'
-      '> $line | $text\n    | ${' ' * (column < 0 ? 0 : column)}^\n\n${error.message}';
+  final length = error.length ?? 1;
+  final available = text.length - column;
+  final visibleLength = available < 1 ? 1 : length.clamp(1, available);
+  return '${error.source} error at line $line, column $column, position ${error.position}, length $length\n\n'
+      '> $line | $text\n    | ${' ' * (column < 0 ? 0 : column)}${'^' * visibleLength}\n\n${error.message}';
 }

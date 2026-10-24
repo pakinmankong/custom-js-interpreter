@@ -66,6 +66,23 @@ Future<void> runAsyncTests(
   Future<void> Function(String, Future<void> Function()) test,
   void Function(dynamic, dynamic) expect,
 ) async {
+  await test('async error includes identifier length', () async {
+    final interpreter = InterpreterService();
+    Object? caught;
+    try {
+      await interpreter.executeAsync('return missingValue;');
+    } catch (error) {
+      caught = error;
+    }
+    if (caught == null) throw StateError('Expected undefined variable');
+    final error = createInterpreterError(
+      caught,
+      'script',
+      1,
+      interpreter.userCode,
+    );
+    expect(error.length, 12);
+  });
   final fixtures =
       jsonDecode(
             File.fromUri(
@@ -192,6 +209,24 @@ Future<void> runAsyncTests(
       }
       if (caught == null || !caught.toString().contains('AST cache miss'))
         throw StateError('Expected strict cache miss');
+      final missingInput = InterpreterService(
+        InterpreterContext(
+          astBundle: bundle,
+          requireCachedAst: true,
+          functions: interpreter.context.functions,
+        ),
+      );
+      caught = null;
+      try {
+        await missingInput.executeCachedAsync();
+      } catch (error) {
+        caught = error;
+      }
+      if (caught == null) throw StateError('Expected missing input');
+      expect(
+        createInterpreterError(caught, 'script', 1, bundle.codes.single).length,
+        5,
+      );
     },
   );
 }

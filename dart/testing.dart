@@ -198,6 +198,7 @@ Future<void> main() async {
     } on JsError catch (e) {
       final error = createInterpreterError(e, 'script', 1, 'return missing;');
       expect(error.line, 1);
+      expect(error.length, 7);
       if (!formatInterpreterError(
         error,
       ).contains('Undefined variable: missing'))

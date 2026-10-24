@@ -52,10 +52,14 @@ class JsParser {
     line: token.line,
     column: token.column,
     position: token.start,
+    length: token.kind == 'eof' ? 1 : token.text.length,
   );
   Node node(String type, Token t, [Map<String, dynamic> fields = const {}]) => {
     'type': type,
     'start': t.start,
+    'end': cursor > 0 && tokens[cursor - 1].start >= t.start
+        ? tokens[cursor - 1].start + tokens[cursor - 1].text.length
+        : t.start + t.text.length,
     'line': t.line,
     'column': t.column,
     ...fields,

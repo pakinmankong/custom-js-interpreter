@@ -14,8 +14,10 @@ test("external runtime error formatting uses node loc.start and preserves direct
   const error = createInterpreterError(raw, "script", interpreter.lineOffset, code);
   assert.equal(error.line, 3);
   assert.equal(error.column, 0);
+  assert.equal(error.length, 5);
   assert.equal(error.position, (raw as any).pos);
   assert.match(formatInterpreterError(error), /> 3 \| sdfds/);
+  assert.match(formatInterpreterError(error), /\^\^\^\^\^/);
   assert.equal(createInterpreterError(error, "script", 1), error);
 });
 
@@ -77,4 +79,21 @@ test("data strings stay literal while legacy and explicit formulas still execute
   }});
   assert.deepEqual(interpreter.execute('return [_UUC_DETAIL_["unit"],_UUC_DETAIL_.resolution,_UUC_DETAIL_.make,_UUC_DETAIL_.empty,_UUC_DETAIL_.numericText,DATA.A,DATA.B,DATA.C];'), [id,'0.1','Magnetic Flowmeter','','123invalid',5,6,7]);
   assert.throws(() => interpreter.execute('return DATA.bad;'), /Identifier directly after number/);
+});
+
+test('error length supports explicit spans, loc columns and missing metadata', () => {
+  assert.equal(createInterpreterError({message:'bad',start:2,end:8},'script').length,6);
+  assert.equal(createInterpreterError({message:'bad',length:3},'script').length,3);
+  assert.equal(createInterpreterError({message:'bad',loc:{start:{line:1,column:2},end:{line:1,column:7}}},'script').length,5);
+  assert.equal(createInterpreterError(new Error('bad'),'script').length,1);
+  assert.equal(createInterpreterError({message:'bad',length:-1},'script').length,1);
+});
+
+test('async runtime error includes the offending identifier length', async () => {
+  const interpreter = new InterpreterService();
+  await assert.rejects(interpreter.executeAsync('return missingValue;'), (raw: any) => {
+    const error = createInterpreterError(raw,'script',1,interpreter.userCode);
+    assert.equal(error.length,12);
+    return true;
+  });
 });

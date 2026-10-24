@@ -135,6 +135,9 @@ try {
 `lineOffset` หักบรรทัดของ wrapper เพื่อแสดงเลขบรรทัดในโค้ดที่ส่งเข้าไป
 ตัวแปลงรองรับทั้งตำแหน่ง syntax error (`loc.line`) และ runtime error
 (`loc.start.line`) ส่วนบรรทัด `#CURRENT_ROW` ที่ข้ามยังนับบรรทัดตามเดิม
+Error มี `length` สำหรับความยาวช่วงข้อความที่ผิด โดยคำนวณจาก AST span
+และใช้ `1` หากไม่มีข้อมูลช่วงตำแหน่ง Formatter จะแสดง `length` และขีด `^`
+ตามช่วงข้อความในบรรทัดนั้น ทั้ง TS และ Dart รองรับ sync/async เหมือนกัน
 
 ## Semicolon
 

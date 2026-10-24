@@ -128,6 +128,7 @@ class _AsyncEvaluator {
       error.line ??= node['line'];
       error.column ??= node['column'];
       error.position ??= node['start'];
+      error.length ??= _nodeLength(node);
       rethrow;
     } on _Signal {
       rethrow;
@@ -137,6 +138,7 @@ class _AsyncEvaluator {
         line: node['line'],
         column: node['column'],
         position: node['start'],
+        length: _nodeLength(node),
       );
     }
   }

@@ -4,6 +4,8 @@ import DataResolver from "./data_resolver.js";
 import { AstCache } from "./ast_cache.js";
 
 export interface InterpreterContext {
+  /** Enable lazy formula resolution. Default: false (plain variable access). */
+  resolver?: boolean;
   variables?: Record<string, any>;
   functions?: Record<string, any>;
   code?: string;
@@ -229,6 +231,7 @@ export default class InterpreterService {
     root: string;
     path: string[];
   } | null {
+    if (this.context.resolver !== true) return null;
     if (node.type === "Identifier") {
       var root = this.getDataRootName(node.name);
 
@@ -549,7 +552,7 @@ export default class InterpreterService {
             ? env.get("__FORMULA_PATH__")
             : null;
 
-          if (formulaRoot && Array.isArray(formulaPath)) {
+          if (this.context.resolver === true && formulaRoot && Array.isArray(formulaPath)) {
             return this.dataResolver.resolveLocal(
               node.name,
               formulaRoot,

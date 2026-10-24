@@ -41,7 +41,7 @@ function run(fixture: any) {
     HOST_APPLY: (fn: (x: number)=>any,value: number) => fn(value),
     HOST_IDENTITY: (fn: any) => fn,
   });
-  interpreter = new InterpreterService({
+  interpreter = new InterpreterService({ resolver: true,
     variables: {CURRENT_ROW:[1,0],_UNIT_:{1:{ID:1,SYMBOL:"m",NAME:"metre"}},...fixture.variables}, functions,
   });
   try { return {status:"ok", value:encode(interpreter.execute(fixture.code)), calls:encode(calls)}; }

@@ -24,7 +24,7 @@ test('compiled functions register and invoke host callbacks', () => {
   assert.ok(Math.abs(result[2]-2.2281388519649385)<1e-6);
 });
 test('compiled resolver handles forward references and caches results', () => {
-  const interpreter = new InterpreterService({variables:{DATA:{columns:[{name:'A',formula:'return B + 1'},{name:'B',formula:'return 10'}]}}});
+  const interpreter = new InterpreterService({resolver:true,variables:{DATA:{columns:[{name:'A',formula:'return B + 1'},{name:'B',formula:'return 10'}]}}});
   assert.equal(interpreter.execute('return DATA.A;'),11);
   assert.equal(interpreter.dataResolver.cache.get('DATA.A'),11);
 });

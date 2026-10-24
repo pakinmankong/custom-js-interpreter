@@ -3,6 +3,7 @@ import InterpreterService from "./lib/interpreter_service.js";
 import { createInterpreterError, formatInterpreterError } from "./lib/errors.js";
 
 var interpreter: InterpreterService = new InterpreterService({
+  resolver: false,
   variables: {
     CURRENT_ROWS: [0, 0],
     _SOURCE_: {

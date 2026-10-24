@@ -57,7 +57,7 @@ test("cached ASTs are deeply frozen and cannot poison later parses", () => {
 });
 
 test("AST caching can be disabled for comparison", () => {
-  const interpreter = new InterpreterService({ astCache: false });
+  const interpreter = new InterpreterService({ resolver: true, astCache: false });
   assert.equal(interpreter.astCache, null);
   assert.notEqual(interpreter.parse("var n=1;"), interpreter.parse("var n=1;"));
   assert.equal(interpreter.execute("return 2+3;"), 5);
@@ -66,7 +66,7 @@ test("AST caching can be disabled for comparison", () => {
 
 test("execute reuses AST but reads current inputs and repeats side effects", () => {
   let calls = 0;
-  const interpreter = new InterpreterService({ variables: { input: 1 }, functions: { count: () => ++calls } });
+  const interpreter = new InterpreterService({ resolver: true, variables: { input: 1 }, functions: { count: () => ++calls } });
   const code = "return [input, count()];";
   assert.deepEqual(interpreter.execute(code), [1,1]);
   interpreter.globalEnv.set("input", 2);
@@ -103,8 +103,8 @@ test("runtime failures do not cache an error or retain a failed scope", () => {
 
 test("shared AST cache keeps interpreter globals and closures separate", () => {
   const cache = new AstCache(10);
-  const a = new InterpreterService({ variables: { input: 1 }, astCache: cache });
-  const b = new InterpreterService({ variables: { input: 9 }, astCache: cache });
+  const a = new InterpreterService({ resolver: true, variables: { input: 1 }, astCache: cache });
+  const b = new InterpreterService({ resolver: true, variables: { input: 9 }, astCache: cache });
   const code = "function read(){return input;}return read();";
   assert.equal(a.execute(code), 1);
   assert.equal(b.execute(code), 9);
@@ -118,7 +118,7 @@ test("same formula AST uses each data root and current resolver values", () => {
     DATA: { A: "return B;", B: "return 1;" },
     OTHER: { A: "return B;", B: "return 2;" },
   };
-  const interpreter = new InterpreterService({ variables });
+  const interpreter = new InterpreterService({ resolver: true, variables });
   const code = "return [DATA.A,OTHER.A];";
   assert.deepEqual(interpreter.execute(code), [1,2]);
   assert.equal(interpreter.astCache!.stats.misses, 4); // main, shared A, two B formulas
@@ -131,7 +131,7 @@ test("same formula AST uses each data root and current resolver values", () => {
 
 test("AST cache does not replace DataResolver's formula result cache", () => {
   let calls = 0;
-  const interpreter = new InterpreterService({ variables: { DATA: { A: "return count();" } }, functions: { count: () => ++calls } });
+  const interpreter = new InterpreterService({ resolver: true, variables: { DATA: { A: "return count();" } }, functions: { count: () => ++calls } });
   const code = "return DATA.A;";
   assert.equal(interpreter.execute(code), 1);
   interpreter.clearAstCache();
@@ -183,7 +183,7 @@ test("AST cache exports a detached, versioned JSON snapshot", () => {
 });
 
 test("export includes parsed dependency formulas and preserves BigInt/nonfinite literals", () => {
-  const interpreter = new InterpreterService({ variables: { DATA: { A: "return 1n;" } } });
+  const interpreter = new InterpreterService({ resolver: true, variables: { DATA: { A: "return 1n;" } } });
   assert.deepEqual(interpreter.execute("return [DATA.A,1e999];"), [1n,Infinity]);
   const snapshot = JSON.parse(JSON.stringify(interpreter.exportAstCache()));
   assert.equal(snapshot.entries.length, 2);
@@ -201,12 +201,12 @@ test("JSON export does not touch LRU ordering/counters and reports disabled cach
   assert.deepEqual(interpreter.astCache!.stats, stats);
   interpreter.clearAstCache();
   assert.deepEqual(interpreter.exportAstCache().entries, []);
-  assert.throws(() => new InterpreterService({astCache:false}).exportAstCache(), /disabled/);
+  assert.throws(() => new InterpreterService({ resolver: true,astCache:false}).exportAstCache(), /disabled/);
 });
 
 test("compile prepares JSON without invoking code or host functions", () => {
   let calls = 0;
-  const interpreter = new InterpreterService({functions:{print:()=>calls++}});
+  const interpreter = new InterpreterService({ resolver: true,functions:{print:()=>calls++}});
   interpreter.compile('print("hello");return missing;');
   interpreter.compileFormula('return missingFormulaValue;');
   assert.equal(calls,0);

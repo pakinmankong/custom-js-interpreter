@@ -115,6 +115,11 @@ print discards output.
 
 ## Formula functions and services
 
+Data resolution is disabled by default. `InterpreterContext(variables: data)`
+reads ordinary values, including strings and formula objects, without evaluating
+them. Use `InterpreterContext(resolver: true, variables: data)` to enable lazy
+formulas, sibling references, named columns and the `RECORDS` alias.
+
 `createFunctions()` is exported by the public library. JavaScript parameters have
 same order/defaults as TypeScript; see [the function reference](../FUNCTIONS.md).
 `code.dart` and `index.dart` already register the full set.

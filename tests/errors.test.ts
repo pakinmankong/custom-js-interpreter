@@ -53,7 +53,7 @@ test("runtime line formatting supports every JavaScript newline after ignored me
 test("nested data formula errors retain the actual source rather than the caller script", () => {
   const formula = 'return 123invalid';
   let interpreter: InterpreterService;
-  interpreter = new InterpreterService({
+  interpreter = new InterpreterService({ resolver: true,
     variables: { CURRENT_ROWS: [0], _RECORDS_: { MAIN_GROUP: { formula } } },
     functions: createFunctions({getEnv: () => interpreter.currentEnv}),
   });
@@ -67,4 +67,14 @@ test("nested data formula errors retain the actual source rather than the caller
     assert.equal(interpreter.dataResolver.evaluating.length, 0);
     return true;
   });
+});
+
+test("data strings stay literal while legacy and explicit formulas still execute", () => {
+  const id = 'bd4d74c0-275e-45b5-928b-68fa4f30a505';
+  const interpreter = new InterpreterService({ resolver: true, variables: {
+    _UUC_DETAIL_: { unit: id, resolution: '0.1', make: 'Magnetic Flowmeter', empty: '', numericText: '123invalid' },
+    DATA: { A: 'return 5;', B: '// comment\n#CURRENT_ROW=0\nreturn A+1;', C: {formula: 'return 7;'}, bad: {formula: '123invalid'} },
+  }});
+  assert.deepEqual(interpreter.execute('return [_UUC_DETAIL_["unit"],_UUC_DETAIL_.resolution,_UUC_DETAIL_.make,_UUC_DETAIL_.empty,_UUC_DETAIL_.numericText,DATA.A,DATA.B,DATA.C];'), [id,'0.1','Magnetic Flowmeter','','123invalid',5,6,7]);
+  assert.throws(() => interpreter.execute('return DATA.bad;'), /Identifier directly after number/);
 });

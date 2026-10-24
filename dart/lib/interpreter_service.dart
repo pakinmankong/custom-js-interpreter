@@ -8,12 +8,14 @@ import 'compiled_ast_bundle.dart';
 export 'runtime.dart' show undefined, JsUndefined, NativeFunction, jsString;
 
 class InterpreterContext {
+  final bool resolver;
   final Map<String, dynamic> variables;
   final Map<String, dynamic> functions;
   final String code;
   final CompiledAstBundle? astBundle;
   final bool requireCachedAst;
   InterpreterContext({
+    this.resolver = false,
     Map<String, dynamic>? variables,
     Map<String, dynamic>? functions,
     this.code = '',
@@ -233,6 +235,7 @@ class InterpreterService {
 
   String getDataRootName(String name) => name == 'RECORDS' ? '_RECORDS_' : name;
   ({String root, List<String> path})? getDataReferencePath(Node node, Env env) {
+    if (!context.resolver) return null;
     if (node['type'] == 'Identifier') {
       final root = getDataRootName(node['name']);
       return context.variables.containsKey(root)
@@ -392,7 +395,7 @@ class InterpreterService {
         final path = env.has('__FORMULA_PATH__')
             ? env.get('__FORMULA_PATH__')
             : null;
-        if (root is String && path is List<String>)
+        if (context.resolver && root is String && path is List<String>)
           return dataResolver.resolveLocal(name, root, path, env);
         throw JsError('Undefined variable: $name');
       case 'NumericLiteral':

@@ -23,12 +23,18 @@ class DataResolver {
       throw JsError('Undefined data source: $rootName');
     final node = find(variables[rootName], path);
     if (identical(node, undefined)) throw JsError('Undefined reference: $key');
-    if (node is String) return evaluateFormula(key, node, rootName, path, env);
+    if (node is String && _isLegacyFormula(node)) {
+      return evaluateFormula(key, node, rootName, path, env);
+    }
     if (node is Map && node['formula'] is String)
       return evaluateFormula(key, node['formula'], rootName, path, env);
     cache[key] = node;
     return node;
   }
+
+  bool _isLegacyFormula(String value) => RegExp(
+    r'^(?:\s|//[^\r\n\u2028\u2029]*(?:[\r\n\u2028\u2029]|$)|/\*[\s\S]*?\*/|#[Cc][Uu][Rr][Rr][Ee][Nn][Tt]_[Rr][Oo][Ww][^\r\n\u2028\u2029]*(?:[\r\n\u2028\u2029]|$))*(?:return|var|let|const|function|if|for|while|do|switch|try|throw)\b',
+  ).hasMatch(value);
 
   dynamic resolveLocal(
     String name,

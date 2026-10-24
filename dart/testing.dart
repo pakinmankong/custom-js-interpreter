@@ -74,10 +74,20 @@ void main() {
       }
     });
   }
+  test('resolver defaults to false and requires explicit opt-in', () {
+    final variables = {'DATA': {'value': 'return 5', 'cell': {'formula': 'return 6'}, 'unit': 'uuid-text'}};
+    for (final context in [InterpreterContext(variables: variables), InterpreterContext(variables: variables, resolver: false)]) {
+      final interpreter = InterpreterService(context);
+      expect(interpreter.execute('return [DATA.value,DATA.cell.formula,DATA.unit];'), ['return 5', 'return 6', 'uuid-text']);
+      expect(interpreter.dataResolver.cache.length, 0);
+    }
+    final interpreter = InterpreterService(InterpreterContext(variables: variables, resolver: true));
+    expect(interpreter.execute('return [DATA.value,DATA.cell,DATA.unit];'), [5, 6, 'uuid-text']);
+  });
   test('print arguments, expressions, loop and nested function', () {
     final calls = <List<dynamic>>[];
     final interpreter = InterpreterService(
-      InterpreterContext(
+      InterpreterContext(resolver: true, 
         functions: {
           'print': NativeFunction((args, receiver) {
             calls.add(List.of(args));
@@ -107,7 +117,7 @@ void main() {
   });
   test('data formulas, named arrays, columns, children and RECORDS alias', () {
     final interpreter = InterpreterService(
-      InterpreterContext(
+      InterpreterContext(resolver: true, 
         variables: {
           '_RECORDS_': {
             'group': {
@@ -131,7 +141,7 @@ void main() {
   });
   test('circular dependency and evaluating stack cleanup', () {
     final interpreter = InterpreterService(
-      InterpreterContext(
+      InterpreterContext(resolver: true, 
         variables: {
           'DATA': {'A': 'return B', 'B': 'return A'},
         },
@@ -196,7 +206,7 @@ void main() {
   });
   test('nested formula error formatting retains original source', () {
     const formula = 'return 123invalid';
-    final interpreter = InterpreterService(InterpreterContext(
+    final interpreter = InterpreterService(InterpreterContext(resolver: true, 
       variables: {'DATA': {'field': {'formula': formula}}},
     ));
     Object? caught;
@@ -215,9 +225,22 @@ void main() {
     }
     expect(interpreter.dataResolver.evaluating.length, 0);
   });
+  test('data strings remain literal while legacy and explicit formulas execute', () {
+    const id = 'bd4d74c0-275e-45b5-928b-68fa4f30a505';
+    final interpreter = InterpreterService(InterpreterContext(resolver: true, variables: {
+      '_UUC_DETAIL_': {'unit': id, 'resolution': '0.1', 'make': 'Magnetic Flowmeter', 'empty': '', 'numericText': '123invalid'},
+      'DATA': {'A': 'return 5;', 'B': '// comment\n#CURRENT_ROW=0\nreturn A+1;', 'C': {'formula': 'return 7;'}, 'bad': {'formula': '123invalid'}},
+    }));
+    expect(interpreter.execute('return [_UUC_DETAIL_["unit"],_UUC_DETAIL_.resolution,_UUC_DETAIL_.make,_UUC_DETAIL_.empty,_UUC_DETAIL_.numericText,DATA.A,DATA.B,DATA.C];'), [id, '0.1', 'Magnetic Flowmeter', '', '123invalid', 5, 6, 7]);
+    Object? caught;
+    try { interpreter.execute('return DATA.bad;'); } catch (error) { caught = error; }
+    if (caught is! InterpreterError || caught.source != 'DATA.bad') {
+      throw StateError('Expected explicit invalid formula to throw');
+    }
+  });
   test('example math functions ported from index.ts', () {
     final interpreter = InterpreterService(
-      InterpreterContext(functions: createExampleFunctions()),
+      InterpreterContext(resolver: true, functions: createExampleFunctions()),
     );
     expect(
       interpreter.execute('''

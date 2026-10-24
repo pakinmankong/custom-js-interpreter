@@ -29,6 +29,7 @@ import { InterpreterService, createFunctions } from 'custom-js-interpreter';
 
 let interpreter: InterpreterService;
 interpreter = new InterpreterService({
+  resolver: true,
   variables: {
     DATA: {
       columns: [
@@ -83,6 +84,36 @@ interpreter.execute('print("items:", [1, 2, 3]); print("done");');
 
 callback ทำงานแบบ synchronous และได้รับค่าที่ยังไม่แปลงเป็นข้อความ
 เมื่อกำหนด `output` จะใช้ callback นี้แทน `console.log`
+
+## String ในข้อมูลและ formula
+
+ค่าเริ่มต้นคือ `resolver: false` อ่าน `variables` เป็นข้อมูลตรง ๆ
+โดยไม่ประมวลผล string หรือ `{ formula: "..." }` เป็นโค้ด
+เปิด lazy formula resolution ด้วย `new InterpreterService({ resolver: true, variables })`
+ใน Dart ใช้ `InterpreterContext(resolver: true, variables: variables)`
+กติกา formula ด้านล่างใช้เมื่อเปิด resolver แล้วเท่านั้น
+
+String ทั่วไปใน `variables` เช่น UUID, `"0.1"` หรือ `"Magnetic Flowmeter"`
+เป็นข้อมูลตามเดิม ไม่ถูก parse เป็น JavaScript เมื่ออ่าน property
+ทั้ง TS และ Dart ใช้กติกาเดียวกัน
+
+รองรับ formula แบบเดิมที่เริ่มด้วยคำสั่ง `return`, `var`, `let`, `const`,
+`function`, `if`, `for`, `while`, `do`, `switch`, `try` หรือ `throw`
+(มี whitespace, comment หรือ `#CURRENT_ROW` นำหน้าได้)
+สำหรับโค้ดรูปแบบอื่น ให้ระบุชัดเจนด้วย `{ formula: "..." }`:
+
+```ts
+variables: {
+  _UUC_DETAIL_: { unit: 'bd4d74c0-275e-45b5-928b-68fa4f30a505' },
+  DATA: {
+    A: 'return 10',
+    B: { formula: 'return A + 1' },
+  },
+},
+```
+
+String ที่ขึ้นต้นด้วยคำสั่งข้างต้นยังถูกมองเป็น formula เพื่อรองรับข้อมูลเดิม
+หากต้องการแยกโค้ดให้ชัดเจน แนะนำให้ใช้ `{ formula: "..." }`
 
 ## แสดง error จากโค้ดที่รัน
 

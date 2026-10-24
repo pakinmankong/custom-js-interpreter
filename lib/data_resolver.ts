@@ -47,7 +47,9 @@ export default class DataResolver {
       throw new Error(`Undefined reference: ${[rootName, ...path].join(".")}`);
     }
 
-    if (typeof node === "string") {
+    // Plain strings are data. Keep legacy statement-based formulas, while
+    // { formula: ... } explicitly identifies arbitrary executable source.
+    if (typeof node === "string" && this.isLegacyFormula(node)) {
       return this.evaluateFormula(key, node, rootName, path, env);
     }
 
@@ -58,6 +60,10 @@ export default class DataResolver {
     this.cache.set(key, node);
 
     return node;
+  }
+
+  private isLegacyFormula(value: string): boolean {
+    return /^(?:\s|\/\/[^\r\n\u2028\u2029]*(?:[\r\n\u2028\u2029]|$)|\/\*[\s\S]*?\*\/|#[Cc][Uu][Rr][Rr][Ee][Nn][Tt]_[Rr][Oo][Ww][^\r\n\u2028\u2029]*(?:[\r\n\u2028\u2029]|$))*(?:return|var|let|const|function|if|for|while|do|switch|try|throw)\b/.test(value);
   }
 
   resolveLocal(name: string, rootName: string, path: string[], env: Env) {

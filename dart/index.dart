@@ -15,7 +15,7 @@ void main() {
   ).readAsStringSync();
   late final InterpreterService interpreter;
   interpreter = InterpreterService(
-    InterpreterContext(
+    InterpreterContext(resolver: false,
       variables: data,
       functions: createFunctions(
         getEnv: () => interpreter.currentEnv,

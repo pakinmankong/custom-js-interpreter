@@ -20,3 +20,14 @@ for (const fixture of fixtures) {
     else assert.deepEqual(interpreter.execute(fixture.code),decode(fixture.expected));
   });
 }
+
+test('resolver is disabled by default and enabled only with resolver: true', () => {
+  const variables = { DATA: { value: 'return 5', cell: {formula: 'return 6'}, unit: 'uuid-text' } };
+  for (const context of [{variables}, {variables, resolver: false}]) {
+    const interpreter = new InterpreterService(context);
+    assert.deepEqual(interpreter.execute('return [DATA.value, DATA.cell.formula, DATA.unit];'), ['return 5','return 6','uuid-text']);
+    assert.equal(interpreter.dataResolver.cache.size, 0);
+  }
+  const interpreter = new InterpreterService({variables, resolver: true});
+  assert.deepEqual(interpreter.execute('return [DATA.value, DATA.cell, DATA.unit];'), [5,6,'uuid-text']);
+});

@@ -57,7 +57,7 @@ Future<void> main() async {
       'HOST_IDENTITY': NativeFunction((args, t) => args[0]),
     });
     interpreter = InterpreterService(
-      InterpreterContext(
+      InterpreterContext(resolver: true, 
         astBundle: fixture.containsKey('astCache')
             ? CompiledAstBundle.fromJson(fixture['astCache'])
             : null,

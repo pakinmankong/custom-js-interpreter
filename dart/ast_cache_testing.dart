@@ -15,7 +15,7 @@ void runAstCacheTests(
       final bundle = CompiledAstBundle.decode(text);
       expect(bundle.length, 1);
       final interpreter = InterpreterService(
-        InterpreterContext(
+        InterpreterContext(resolver: true, 
           astBundle: bundle,
           requireCachedAst: true,
           variables: {'input': 2},
@@ -41,7 +41,7 @@ void runAstCacheTests(
   );
   test('compiled AST strict mode refuses a missing source', () {
     final interpreter = InterpreterService(
-      InterpreterContext(
+      InterpreterContext(resolver: true, 
         astBundle: CompiledAstBundle.decode(text),
         requireCachedAst: true,
       ),
@@ -100,7 +100,7 @@ void runAstCacheTests(
       Object? caught;
       try {
         InterpreterService(
-          InterpreterContext(astBundle: empty),
+          InterpreterContext(resolver: true, astBundle: empty),
         ).executeCached();
       } catch (error) {
         caught = error;
@@ -111,7 +111,7 @@ void runAstCacheTests(
   );
   test('Dart parses JS independently without an AST bundle', () {
     final interpreter = InterpreterService(
-      InterpreterContext(functions: createFunctions()),
+      InterpreterContext(resolver: true, functions: createFunctions()),
     );
     expect(
       interpreter.execute(
@@ -159,7 +159,7 @@ void runAstCacheTests(
       ],
     });
     final interpreter = InterpreterService(
-      InterpreterContext(
+      InterpreterContext(resolver: true, 
         astBundle: bundle,
         variables: {
           'DATA': {'A': 'return 2 + 3;'},
@@ -169,7 +169,7 @@ void runAstCacheTests(
     expect(interpreter.executeCached(), 5);
     expect(interpreter.execute('return 10 + 1;'), 11);
     final strict = InterpreterService(
-      InterpreterContext(
+      InterpreterContext(resolver: true, 
         astBundle: bundle,
         requireCachedAst: true,
         variables: {

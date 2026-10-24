@@ -1,0 +1,205 @@
+# custom-js-interpreter
+
+Node.js package สำหรับรัน JavaScript subset ผ่าน AST interpreter พร้อม scope,
+closure, array callbacks, formula/data resolver และ custom functions
+
+Source: [kinkop/js-custom-interpreter](https://github.com/kinkop/js-custom-interpreter)
+
+## ติดตั้งจาก GitHub
+
+หลัง push source ขึ้น repo แล้ว ติดตั้งในโปรเจกต์อื่นได้ด้วย:
+
+```sh
+npm install git+https://github.com/kinkop/js-custom-interpreter.git
+```
+
+ต้องใช้ Node.js 22 ขึ้นไป และ Git สำหรับติดตั้งจาก GitHub
+`prepare` จะ build JavaScript และ types ก่อน npm แพ็ก dependency จาก Git
+ไม่ต้องติดตั้ง tsx ในแอปที่นำ package ไปใช้
+รายละเอียด lifecycle: [npm prepare](https://docs.npmjs.com/cli/v11/using-npm/scripts/#prepare-and-prepublish)
+
+ชื่อ package และชื่อที่ import คือ `custom-js-interpreter`
+แม้ชื่อ repository จะเป็น `js-custom-interpreter`
+package นี้ใช้ ES modules และมี TypeScript declarations มาด้วย
+
+## ใช้งาน
+
+```ts
+import { InterpreterService, createFunctions } from 'custom-js-interpreter';
+
+let interpreter: InterpreterService;
+interpreter = new InterpreterService({
+  variables: {
+    DATA: {
+      columns: [
+        { name: 'A', formula: 'return B + 1' },
+        { name: 'B', formula: 'return 10' },
+      ],
+    },
+  },
+  functions: createFunctions({
+    getEnv: () => interpreter.currentEnv,
+    output: (...values) => console.log(...values),
+  }),
+});
+
+const result = interpreter.execute(`
+  const double = value => value * 2;
+  print([1, 2, 3].map(double));
+  return SUM([1, 2, 3]) + DATA.A;
+`);
+console.log(result); // 17
+```
+
+สำหรับ JavaScript ให้ตัด type annotation `: InterpreterService` ออก
+ฟังก์ชันที่ส่งใน context สามารถรับค่าโดยตรง เช่น:
+
+```js
+import InterpreterService from 'custom-js-interpreter';
+
+const interpreter = new InterpreterService({
+  functions: { DOUBLE: value => value * 2 },
+});
+console.log(interpreter.execute('return DOUBLE(5);')); // 10
+```
+
+## Public exports
+
+- Default export และ `InterpreterService`
+- Types: `InterpreterContext`, `FunctionsOptions`, `FunctionServices`
+- `createFunctions`, `matchValue`
+- `AstCache`, types `AstCacheStats`, `AstCacheJSON`, `AstJsonValue`
+- `Env`, `DataResolver`
+- `InterpreterError`, `createInterpreterError`, `formatInterpreterError`
+
+อ่าน signatures และการเชื่อม Standard/Unit services ใน [FUNCTIONS.md](FUNCTIONS.md)
+Interpreter ทำงานแบบ synchronous ให้โหลดข้อมูล API/database ก่อน execute
+
+## AST cache (TypeScript)
+
+เปิดใช้ให้อัตโนมัติ โดยแต่ละ interpreter มี LRU cache จำกัด 100 AST
+ทั้ง `execute()` และสูตรของ DataResolver ใช้ cache นี้ โดย key เป็น source ที่
+ส่งให้ parser จริง รวม wrapper และ whitespace
+
+```ts
+import { AstCache, InterpreterService } from 'custom-js-interpreter';
+
+const cache = new AstCache(200);
+const interpreter = new InterpreterService({
+  astCache: cache,
+  variables: { input: 1 },
+});
+
+interpreter.execute('return input + 1;'); // 2, parse ครั้งแรก
+interpreter.globalEnv.set('input', 9);
+interpreter.execute('return input + 1;'); // 10, reuse AST และประเมินใหม่
+console.log(cache.stats); // hits: 1, misses: 1, size: 1
+interpreter.clearAstCache(); // ล้าง AST และ reset counters
+```
+
+ส่ง `astCache: false` เพื่อปิด cache สำหรับทดลองเปรียบเทียบ หรือส่ง `AstCache`
+ตัวเดียวกันให้หลาย interpreter เพื่อแชร์ AST ได้ โดยยังแยก scope และค่าตัวแปร
+Cached AST ถูก freeze ทั้งต้นไม้ รวม AST ที่ได้จาก public `parse()` เพื่อป้องกัน
+การแก้ node แล้วกระทบการรันครั้งถัดไป ส่วน syntax error จะไม่ถูกเก็บใน cache
+
+นี่คือ **AST cache** ไม่ใช่ cache ผลลัพธ์หรือ closure การรันแต่ละครั้งยังสร้าง
+ค่าต่าง ๆ และเรียก host functions ใหม่ตามปกติ ส่วน formula result cache เดิมของ
+DataResolver ยังมีอยู่แยกต่างหาก หากเปลี่ยนข้อมูลต้นทางและต้องการคำนวณสูตรใหม่
+ให้ใช้ `interpreter.dataResolver.clearCache()` การล้าง AST อย่างเดียวไม่ล้างผลสูตร
+และการ clear cache ที่แชร์กันจะล้าง AST ให้ทุก instance ที่ใช้ cache นั้น
+
+รันทดลองด้วย `npm run benchmark:ast-cache` ซึ่ง build แล้ววัดเวลารันโค้ดเดิม
+1,000 ครั้ง (median 3 รอบ) เทียบเปิด/ปิด cache โดยเปลี่ยน input ทุกครั้งและตรวจ
+ผลลัพธ์ด้วย ประสิทธิภาพที่ได้ขึ้นกับโค้ดและเครื่อง หาก result cache ของสูตร hit
+อยู่แล้ว สูตรนั้นจะไม่ถึงขั้น parse จึงไม่ได้ประโยชน์เพิ่มจาก AST cache ในครั้งนั้น
+
+### ส่ง AST cache เป็น JSON ไป Flutter
+
+```ts
+const interpreter = new InterpreterService();
+interpreter.compile('return SUM([1, 2, 3]);'); // เตรียม AST โดยไม่รันโค้ด
+const payload = interpreter.exportAstCache();
+const json = JSON.stringify(payload); // ส่งผ่าน API หรือเขียนลงไฟล์ได้
+// หรือ JSON.stringify(interpreter.astCache) จะเรียก toJSON() เช่นกัน
+```
+
+เรียก `exportAstCache()` หลัง `execute()` ได้ด้วย แต่ snapshot จะมีเฉพาะ source
+ที่เคย parse และยังอยู่ใน LRU เท่านั้น ถ้ามีสูตรที่ต้องใช้ใน Flutter แต่ฝั่ง TS
+ยังไม่เคยรัน ให้เรียก `compileFormula(formula)` ก่อน export ปรับ capacity ให้
+มากพอสำหรับ main entry และสูตรทั้งหมด เพื่อไม่ให้ entry ที่ต้องใช้ถูก evict
+
+ตัวอย่าง Flutter/Dart:
+
+```dart
+final bundle = CompiledAstBundle.decode(jsonFromServer);
+final interpreter = InterpreterService(InterpreterContext(
+  astBundle: bundle,
+  requireCachedAst: true,
+  functions: createFunctions(),
+));
+final result = interpreter.executeCached(); // 6; ไม่ parse JS ซ้ำ
+```
+
+หาก bundle มี main หลายตัว ให้ส่งโค้ดที่ต้องการเป็น argument ของ
+`executeCached(code)` หรือใช้ `execute(code)` ตามเดิม โหมด `requireCachedAst`
+จะแจ้ง error ถ้า main/formula source ไม่อยู่ใน bundle แทนการ parse เพิ่ม
+ถ้าปิดโหมดนี้ source ที่ขาดจะ fallback ไป Dart parser เดิม
+
+JSON มี `format`, `version`, `parser` และ `entries: [{source, ast}]`
+ไม่รวมตัวแปร, host functions, ผลลัพธ์ หรือ closure ต้องส่ง variables/functions
+ให้ Dart runtime เอง AST BigInt และ nonfinite numbers ถูกแปลงให้ส่งผ่าน JSON ได้
+ตัวอ่าน Dart ตรวจ version และปรับ Babel AST เป็นรูปแบบที่ evaluator ใช้ได้
+นี่คือการ **ประเมิน AST ตอน runtime** ไม่ใช่ compile JavaScript เป็น native code
+Dart เพิ่มเฉพาะตัวอ่าน snapshot นี้ ยังไม่ได้เพิ่ม LRU cache ให้ Dart parser
+
+สร้างไฟล์ JSON โดยไม่รัน JS:
+
+```sh
+npm run export:ast -- dart/code.js /tmp/ast-cache.json
+# เพิ่มสูตรที่ต้องใช้ โดยแต่ละไฟล์มีข้อความสูตรตรงกับใน data source:
+npm run export:ast -- code.js /tmp/ast-cache.json formula-a.js formula-b.js
+npm run test:ast-json # เทียบ TS กับ Dart ที่ใช้ JSON โดยห้าม parse source ซ้ำ
+```
+
+ตัวอย่าง JSON อยู่ใน `dart/ast_cache_example.json` และวิธีใช้เพิ่มเติมอยู่ใน
+[Dart README](https://github.com/kinkop/js-custom-interpreter/blob/main/dart/README.md)
+
+## พัฒนาและตรวจ package
+
+```sh
+npm install
+npm run build
+npm run typecheck
+npm test
+npm run test:package
+npm pack
+```
+
+`lib/index.ts` เป็น library entry point ส่วน `index.ts` ที่ root เป็นตัวอย่าง
+รันด้วย `npm run example` โดยการ import package จะไม่รันตัวอย่างนี้
+
+`npm pack` สร้าง tarball ที่มีเฉพาะ dist, types, license และเอกสาร
+ไม่รวม tests, development tools, source ตัวอย่าง หรือ Dart
+ทดสอบ tarball ในโปรเจกต์อื่นได้ด้วย:
+
+```sh
+npm install /path/to/custom-js-interpreter-1.0.0.tgz
+```
+
+GitHub Actions ตรวจ Node package บน Node 22 และ 24 เมื่อ push หรือเปิด PR
+ไม่มี workflow สำหรับ publish โดยอัตโนมัติ การเผยแพร่บน npm registry
+ต้องเลือกชื่อที่มีสิทธิ์ใช้งานและตั้งค่า npm account แยกต่างหาก
+
+## Dart / Flutter และขอบเขตภาษา
+
+Dart อยู่ใน `dart/` ใน source repository และใช้เป็น Flutter path dependency
+ได้ตาม [Dart README](https://github.com/kinkop/js-custom-interpreter/blob/main/dart/README.md)
+โดยไม่ต้องใช้ Node.js หรือ package ฝั่ง npm ตอนรัน Flutter
+
+นี่เป็น JavaScript subset ยังไม่รองรับ ECMAScript ทั้งหมด เช่น class/new,
+async/await และ try/catch
+
+อ่านขอบเขตการเทียบ TS/Dart ใน [PARITY.md](PARITY.md)
+สำหรับผู้พัฒนาที่มี Dart SDK รันเทียบทั้งสองฝั่งด้วย `npm run test:parity`
+
+License: ISC

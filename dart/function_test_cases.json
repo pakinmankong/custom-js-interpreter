@@ -1,0 +1,930 @@
+[
+  {
+    "name": "SUCCESS",
+    "code": "return SUCCESS(42, \"ok\");",
+    "expected": {
+      "type": "success",
+      "value": 42,
+      "message": "ok"
+    }
+  },
+  {
+    "name": "ERROR",
+    "code": "return ERROR(\"bad\", { code: 1 });",
+    "expected": {
+      "type": "error",
+      "message": "bad",
+      "data": {
+        "code": 1
+      }
+    }
+  },
+  {
+    "name": "FIRST",
+    "code": "return FIRST([10,20]);",
+    "expected": 10
+  },
+  {
+    "name": "LAST",
+    "code": "return LAST([10,20]);",
+    "expected": 20
+  },
+  {
+    "name": "COUNT",
+    "code": "return COUNT([10,20]);",
+    "expected": 2
+  },
+  {
+    "name": "NUMBER",
+    "code": "return NUMBER(\"12.5\");",
+    "expected": 12.5
+  },
+  {
+    "name": "IS_INFINITY",
+    "code": "return IS_INFINITY(\"Infinity\");",
+    "expected": true
+  },
+  {
+    "name": "FIND_INDEX",
+    "code": "return FIND_INDEX([1,\"2\",2], 2, true);",
+    "expected": 2
+  },
+  {
+    "name": "EXP",
+    "code": "return EXP(0);",
+    "expected": 1
+  },
+  {
+    "name": "FIND_REF_SETTING",
+    "code": "return FIND_REF_SETTING({rows:[10,20],columns:[1],datas:[[3],[5]]},15);",
+    "expected": 5
+  },
+  {
+    "name": "SUMSQ",
+    "code": "return SUMSQ([1,2,3]);",
+    "expected": 14
+  },
+  {
+    "name": "SORTING",
+    "code": "return SORTING([3,1,2], \"desc\");",
+    "expected": [
+      3,
+      2,
+      1
+    ]
+  },
+  {
+    "name": "FIND_STD_ERROR",
+    "code": "return FIND_STD_ERROR(1,15);",
+    "expected": {
+      "value": 20,
+      "uncertainty": 5
+    }
+  },
+  {
+    "name": "GET_STD_BY_INDEX",
+    "code": "return GET_STD_BY_INDEX(1,0);",
+    "expected": {
+      "value": 10,
+      "uncertainty": 2
+    }
+  },
+  {
+    "name": "GET_STD_BY_VALUE",
+    "code": "return GET_STD_BY_VALUE(1,30);",
+    "expected": {
+      "value": 30,
+      "uncertainty": 1
+    }
+  },
+  {
+    "name": "UNIT",
+    "code": "return UNIT(1);",
+    "expected": {
+      "ID": 1,
+      "SYMBOL": "m",
+      "NAME": "metre"
+    }
+  },
+  {
+    "name": "UNIT_ID",
+    "code": "return UNIT_ID(\"metre\");",
+    "expected": 1
+  },
+  {
+    "name": "TREND",
+    "code": "return TREND([2,4,6],[1,2,3],4);",
+    "expected": 8
+  },
+  {
+    "name": "RAND",
+    "code": "return RAND();",
+    "check": "RAND"
+  },
+  {
+    "name": "RANDBETWEEN",
+    "code": "return RANDBETWEEN(2,5);",
+    "check": "RANDBETWEEN"
+  },
+  {
+    "name": "UNIT_CONVERT",
+    "code": "return UNIT_CONVERT(1,2,3);",
+    "expected": 300
+  },
+  {
+    "name": "MIN",
+    "code": "return MIN([3,1,2]);",
+    "expected": 1
+  },
+  {
+    "name": "MAX",
+    "code": "return MAX([3,1,2]);",
+    "expected": 3
+  },
+  {
+    "name": "MAP",
+    "code": "return MAP([{v:\"2\"},{v:3}],\"v\");",
+    "expected": [
+      2,
+      3
+    ]
+  },
+  {
+    "name": "SUM",
+    "code": "return SUM([{v:2},{v:3}],\"v\");",
+    "expected": 5
+  },
+  {
+    "name": "AVERAGE",
+    "code": "return AVERAGE([2,4,6]);",
+    "expected": 4
+  },
+  {
+    "name": "STDEV",
+    "code": "return STDEV([1,2,3]);",
+    "expected": 1
+  },
+  {
+    "name": "ABS",
+    "code": "return ABS(-3);",
+    "expected": 3
+  },
+  {
+    "name": "SQRT",
+    "code": "return SQRT(16);",
+    "expected": 4
+  },
+  {
+    "name": "GET_CURRENT_ROW_INDEX",
+    "code": "return GET_CURRENT_ROW_INDEX();",
+    "expected": 1
+  },
+  {
+    "name": "POWER",
+    "code": "return POWER(2,3);",
+    "expected": 8
+  },
+  {
+    "name": "LOG",
+    "code": "return LOG(100);",
+    "expected": 2
+  },
+  {
+    "name": "FIXED",
+    "code": "return FIXED(1.5);",
+    "expected": "1.50"
+  },
+  {
+    "name": "DECIMAL_PLACES",
+    "code": "return DECIMAL_PLACES(1.25);",
+    "expected": 2
+  },
+  {
+    "name": "STR",
+    "code": "return STR(123);",
+    "expected": "123"
+  },
+  {
+    "name": "NUM",
+    "code": "return NUM(\"12.5\");",
+    "expected": 12.5
+  },
+  {
+    "name": "ROW",
+    "code": "return ROW([10,20]);",
+    "expected": 20
+  },
+  {
+    "name": "EMPTY",
+    "code": "return EMPTY(\"  \");",
+    "expected": true
+  },
+  {
+    "name": "MATCH",
+    "code": "return MATCH(25,[10,20,30]);",
+    "expected": 1
+  },
+  {
+    "name": "INDEX",
+    "code": "return INDEX([[1,2],[3,4]],1,0);",
+    "expected": 3
+  },
+  {
+    "name": "ISNULL",
+    "code": "return ISNULL(null);",
+    "expected": true
+  },
+  {
+    "name": "FORMAT_EXPO",
+    "code": "return FORMAT_EXPO(1234,2);",
+    "expected": "1.23e+3"
+  },
+  {
+    "name": "TINV",
+    "code": "return TINV(0.05,10);",
+    "check": "TINV",
+    "expected": 2.2281388519649385,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "ROUND",
+    "code": "return ROUND(1.25,1);",
+    "expected": 1.3
+  },
+  {
+    "name": "ROUNDUP",
+    "code": "return ROUNDUP(-1.231,2);",
+    "expected": -1.24
+  },
+  {
+    "name": "ROUNDDOWN",
+    "code": "return ROUNDDOWN(-1.239,2);",
+    "expected": -1.23
+  },
+  {
+    "name": "INT",
+    "code": "return INT(-1.2);",
+    "expected": -2
+  },
+  {
+    "name": "MMULT",
+    "code": "return MMULT([[1,2]],[[3],[4]]);",
+    "expected": [
+      [
+        11
+      ]
+    ]
+  },
+  {
+    "name": "MINVERSE",
+    "code": "return MINVERSE([[0,1],[1,0]]);",
+    "expected": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "SIG",
+    "code": "return SIG(12.34,2);",
+    "expected": "13"
+  },
+  {
+    "name": "GOAL_SEEK",
+    "code": "return GOAL_SEEK(x => x * 2, 10);",
+    "check": "GOAL_SEEK",
+    "expected": 5,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "print",
+    "code": "return print(\"hello\", 2+3);",
+    "expected": {
+      "$undefined": true
+    }
+  },
+  {
+    "name": "SUCCESS defaults",
+    "code": "return SUCCESS();",
+    "expected": {
+      "type": "success",
+      "value": null,
+      "message": {
+        "$undefined": true
+      }
+    }
+  },
+  {
+    "name": "ERROR defaults",
+    "code": "return ERROR();",
+    "expected": {
+      "type": "error",
+      "message": "",
+      "data": null
+    }
+  },
+  {
+    "name": "FIRST empty",
+    "code": "return FIRST([]);",
+    "expected": null
+  },
+  {
+    "name": "LAST empty",
+    "code": "return LAST([]);",
+    "expected": null
+  },
+  {
+    "name": "LAST return index",
+    "code": "return LAST([10,20],true);",
+    "expected": 1
+  },
+  {
+    "name": "COUNT empty",
+    "code": "return COUNT([]);",
+    "expected": 0
+  },
+  {
+    "name": "FIND_INDEX missing",
+    "code": "return FIND_INDEX([1],2);",
+    "expected": null
+  },
+  {
+    "name": "FIND_INDEX first",
+    "code": "return FIND_INDEX([2,\"2\"],2);",
+    "expected": 0
+  },
+  {
+    "name": "IS_INFINITY negative",
+    "code": "return IS_INFINITY(\"-Infinity\");",
+    "expected": true
+  },
+  {
+    "name": "IS_INFINITY finite",
+    "code": "return IS_INFINITY(5);",
+    "expected": false
+  },
+  {
+    "name": "MAP exclude",
+    "code": "return MAP([{v:1},{v:2}],\"v\",[0],true);",
+    "expected": [
+      2
+    ]
+  },
+  {
+    "name": "MAP object keys",
+    "code": "return MAP({a:{v:1},b:{v:2}},\"v\",[\"b\"]);",
+    "expected": [
+      2
+    ]
+  },
+  {
+    "name": "MAP values",
+    "code": "return MAP([1,2],null);",
+    "expected": [
+      1,
+      2
+    ]
+  },
+  {
+    "name": "SUM nested variadic",
+    "code": "return SUM([1,[2]],3);",
+    "expected": 6
+  },
+  {
+    "name": "SUM keyed object",
+    "code": "return SUM({a:{v:1},b:{v:2}},\"v\");",
+    "expected": 3
+  },
+  {
+    "name": "AVERAGE empty",
+    "code": "return AVERAGE([]);",
+    "expected": 0
+  },
+  {
+    "name": "STDEV empty",
+    "code": "return STDEV([]);",
+    "expected": 0
+  },
+  {
+    "name": "STDEV singleton",
+    "code": "return STDEV([1]);",
+    "expected": {
+      "$number": "NaN"
+    }
+  },
+  {
+    "name": "NUMBER invalid",
+    "code": "return NUMBER(\"bad\");",
+    "expected": {
+      "$number": "NaN"
+    }
+  },
+  {
+    "name": "NUM zero string",
+    "code": "return NUM(\"0\");",
+    "expected": 0
+  },
+  {
+    "name": "STR null",
+    "code": "return STR(null);",
+    "expected": "null"
+  },
+  {
+    "name": "EMPTY NaN",
+    "code": "return EMPTY(NUM(\"bad\"));",
+    "expected": true
+  },
+  {
+    "name": "EMPTY array",
+    "code": "return EMPTY([]);",
+    "expected": true
+  },
+  {
+    "name": "EMPTY object",
+    "code": "return EMPTY({});",
+    "expected": false
+  },
+  {
+    "name": "EMPTY zero",
+    "code": "return EMPTY(0);",
+    "expected": false
+  },
+  {
+    "name": "ISNULL false",
+    "code": "return ISNULL(false);",
+    "expected": false
+  },
+  {
+    "name": "ROW manual index",
+    "code": "return ROW([10,20],0);",
+    "expected": 10
+  },
+  {
+    "name": "ROW nested level",
+    "code": "return ROW([10,20],null,1);",
+    "expected": 10
+  },
+  {
+    "name": "GET_CURRENT_ROW_INDEX nested",
+    "code": "return GET_CURRENT_ROW_INDEX(1);",
+    "expected": 0
+  },
+  {
+    "name": "MATCH exact",
+    "code": "return MATCH(20,[10,20,30],0);",
+    "expected": 1
+  },
+  {
+    "name": "MATCH descending",
+    "code": "return MATCH(25,[30,20,10],-1);",
+    "expected": 0
+  },
+  {
+    "name": "MATCH missing",
+    "code": "return MATCH(5,[10,20]);",
+    "expected": -1
+  },
+  {
+    "name": "INDEX negative",
+    "code": "return INDEX([[1]],-1,0);",
+    "expected": null
+  },
+  {
+    "name": "ROUNDUP positive",
+    "code": "return ROUNDUP(1.231,2);",
+    "expected": 1.24
+  },
+  {
+    "name": "ROUNDDOWN positive",
+    "code": "return ROUNDDOWN(1.239,2);",
+    "expected": 1.23
+  },
+  {
+    "name": "ROUNDUP negative digits",
+    "code": "return ROUNDUP(123,-1);",
+    "expected": 130
+  },
+  {
+    "name": "ROUNDDOWN negative digits",
+    "code": "return ROUNDDOWN(123,-1);",
+    "expected": 120
+  },
+  {
+    "name": "TINV boundary",
+    "code": "return TINV(1,10);",
+    "expected": 0
+  },
+  {
+    "name": "SIG zero",
+    "code": "return SIG(0);",
+    "expected": "0"
+  },
+  {
+    "name": "SIG small number",
+    "code": "return SIG(0.000123456);",
+    "expected": "0.00013"
+  },
+  {
+    "name": "LOG natural",
+    "code": "return LOG(EXP(1),\"e\");",
+    "expected": 1
+  },
+  {
+    "name": "RANDBETWEEN equal bounds",
+    "code": "return RANDBETWEEN(\"2.9\",\"2.9\");",
+    "expected": 2
+  },
+  {
+    "name": "FIND_STD_ERROR exact index",
+    "code": "return FIND_STD_ERROR(1,10,\"uncertainty\",true);",
+    "expected": 0
+  },
+  {
+    "name": "FIND_STD_ERROR out of range",
+    "code": "return FIND_STD_ERROR(1,5);",
+    "expected": null
+  },
+  {
+    "name": "FIND_STD_ERROR empty service result",
+    "code": "return FIND_STD_ERROR(99);",
+    "expected": null
+  },
+  {
+    "name": "GET_STD_BY_INDEX column",
+    "code": "return GET_STD_BY_INDEX(1,null,\"value\");",
+    "expected": [
+      10,
+      20,
+      30
+    ]
+  },
+  {
+    "name": "GET_STD_BY_INDEX missing",
+    "code": "return GET_STD_BY_INDEX(1,99);",
+    "expected": null
+  },
+  {
+    "name": "GET_STD_BY_VALUE missing",
+    "code": "return GET_STD_BY_VALUE(1,99);",
+    "expected": null
+  },
+  {
+    "name": "UNIT fallback",
+    "code": "return UNIT(2);",
+    "expected": {
+      "ID": 2,
+      "SYMBOL": "cm",
+      "NAME": "centimetre"
+    }
+  },
+  {
+    "name": "UNIT missing",
+    "code": "return UNIT(99);",
+    "expected": null
+  },
+  {
+    "name": "UNIT_ID missing",
+    "code": "return UNIT_ID(\"unknown\");",
+    "expected": null
+  },
+  {
+    "name": "UNIT_CONVERT unsupported pair",
+    "code": "return UNIT_CONVERT(2,1,3);",
+    "expected": null
+  },
+  {
+    "name": "GOAL_SEEK zero target",
+    "code": "return GOAL_SEEK(x=>x,0);",
+    "expected": 0
+  },
+  {
+    "name": "FIRST",
+    "code": "return FIRST(1);",
+    "error": "array"
+  },
+  {
+    "name": "LAST",
+    "code": "return LAST(null);",
+    "error": "array"
+  },
+  {
+    "name": "COUNT",
+    "code": "return COUNT(1);",
+    "error": "array"
+  },
+  {
+    "name": "SORTING",
+    "code": "return SORTING(1);",
+    "error": "array"
+  },
+  {
+    "name": "NUMBER",
+    "code": "return NUMBER();",
+    "error": "expects"
+  },
+  {
+    "name": "IS_INFINITY",
+    "code": "return IS_INFINITY(\"bad\");",
+    "error": "number"
+  },
+  {
+    "name": "FIND_INDEX",
+    "code": "return FIND_INDEX(1,2);",
+    "error": "array"
+  },
+  {
+    "name": "EXP",
+    "code": "return EXP(\"bad\");",
+    "error": "numeric"
+  },
+  {
+    "name": "MAP",
+    "code": "return MAP(1,\"v\");",
+    "error": "array or object"
+  },
+  {
+    "name": "ROW",
+    "code": "return ROW([1],0.5);",
+    "error": "integer"
+  },
+  {
+    "name": "GET_CURRENT_ROW_INDEX",
+    "code": "return GET_CURRENT_ROW_INDEX(99);",
+    "error": "CURRENT_ROW"
+  },
+  {
+    "name": "MATCH",
+    "code": "return MATCH(1,[],2);",
+    "error": "matchType"
+  },
+  {
+    "name": "INDEX",
+    "code": "return INDEX([[1]],0.5,0);",
+    "error": "integer"
+  },
+  {
+    "name": "FORMAT_EXPO",
+    "code": "return FORMAT_EXPO(1,0.5);",
+    "error": "integer"
+  },
+  {
+    "name": "POWER",
+    "code": "return POWER(2);",
+    "error": "expects"
+  },
+  {
+    "name": "SQRT",
+    "code": "return SQRT(\"bad\");",
+    "error": "numeric"
+  },
+  {
+    "name": "ABS",
+    "code": "return ABS(\"bad\");",
+    "error": "numeric"
+  },
+  {
+    "name": "LOG",
+    "code": "return LOG(\"bad\");",
+    "error": "numeric"
+  },
+  {
+    "name": "FIXED",
+    "code": "return FIXED(1,0.5);",
+    "error": "integer"
+  },
+  {
+    "name": "DECIMAL_PLACES",
+    "code": "return DECIMAL_PLACES(\"bad\");",
+    "error": "numeric"
+  },
+  {
+    "name": "ROUND",
+    "code": "return ROUND(\"bad\");",
+    "error": "numeric"
+  },
+  {
+    "name": "ROUNDUP",
+    "code": "return ROUNDUP(1,0.5);",
+    "error": "integer"
+  },
+  {
+    "name": "ROUNDDOWN",
+    "code": "return ROUNDDOWN(1,0.5);",
+    "error": "integer"
+  },
+  {
+    "name": "INT",
+    "code": "return INT(\"bad\");",
+    "error": "finite number"
+  },
+  {
+    "name": "MMULT",
+    "code": "return MMULT([[1,2]],[[1,2]]);",
+    "error": "dimensions"
+  },
+  {
+    "name": "MINVERSE",
+    "code": "return MINVERSE([[1,2],[2,4]]);",
+    "error": "singular"
+  },
+  {
+    "name": "TINV",
+    "code": "return TINV(0,10);",
+    "error": "probability"
+  },
+  {
+    "name": "TREND",
+    "code": "return TREND([1,2]);",
+    "error": "expects 3 arguments"
+  },
+  {
+    "name": "RANDBETWEEN",
+    "code": "return RANDBETWEEN(5,2);",
+    "error": "bounds"
+  },
+  {
+    "name": "FIND_REF_SETTING",
+    "code": "return FIND_REF_SETTING();",
+    "error": "ref_setting"
+  },
+  {
+    "name": "FIND_STD_ERROR",
+    "code": "return FIND_STD_ERROR(1,\"bad\");",
+    "error": "finite number"
+  },
+  {
+    "name": "GET_STD_BY_INDEX",
+    "code": "return GET_STD_BY_INDEX(1,0.5);",
+    "error": "integer"
+  },
+  {
+    "name": "GET_STD_BY_VALUE",
+    "code": "return GET_STD_BY_VALUE(1,\"bad\");",
+    "error": "finite number"
+  },
+  {
+    "name": "UNIT",
+    "code": "return UNIT();",
+    "error": "unit_id"
+  },
+  {
+    "name": "UNIT_ID",
+    "code": "return UNIT_ID();",
+    "error": "unit_name"
+  },
+  {
+    "name": "UNIT_CONVERT",
+    "code": "return UNIT_CONVERT(1,2);",
+    "error": "from_value"
+  },
+  {
+    "name": "GOAL_SEEK",
+    "code": "return GOAL_SEEK(x=>1,2);",
+    "error": "could not be found"
+  },
+  {
+    "name": "TINV grid p=0.5 df=1",
+    "code": "return TINV(0.5, 1);",
+    "check": "TINV",
+    "expected": 0.9999999434282881,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.5 df=2",
+    "code": "return TINV(0.5, 2);",
+    "check": "TINV",
+    "expected": 0.8164965809277775,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.5 df=10",
+    "code": "return TINV(0.5, 10);",
+    "check": "TINV",
+    "expected": 0.6998120613126686,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.5 df=30",
+    "code": "return TINV(0.5, 30);",
+    "check": "TINV",
+    "expected": 0.682755689523716,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.5 df=100",
+    "code": "return TINV(0.5, 100);",
+    "check": "TINV",
+    "expected": 0.6769510390799023,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.05 df=1",
+    "code": "return TINV(0.05, 1);",
+    "check": "TINV",
+    "expected": 12.706204736065853,
+    "tolerance": 0.0000012706204736065853
+  },
+  {
+    "name": "TINV grid p=0.05 df=2",
+    "code": "return TINV(0.05, 2);",
+    "check": "TINV",
+    "expected": 4.3026527290723555,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.05 df=10",
+    "code": "return TINV(0.05, 10);",
+    "check": "TINV",
+    "expected": 2.228138842468655,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.05 df=30",
+    "code": "return TINV(0.05, 30);",
+    "check": "TINV",
+    "expected": 2.0422724211548364,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.05 df=100",
+    "code": "return TINV(0.05, 100);",
+    "check": "TINV",
+    "expected": 1.9839714663229422,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.001 df=1",
+    "code": "return TINV(0.001, 1);",
+    "check": "TINV",
+    "expected": 636.619248768735,
+    "tolerance": 0.0000636619248768735
+  },
+  {
+    "name": "TINV grid p=0.001 df=2",
+    "code": "return TINV(0.001, 2);",
+    "check": "TINV",
+    "expected": 31.59905457644363,
+    "tolerance": 0.000003159905457644363
+  },
+  {
+    "name": "TINV grid p=0.001 df=10",
+    "code": "return TINV(0.001, 10);",
+    "check": "TINV",
+    "expected": 4.586893858385731,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.001 df=30",
+    "code": "return TINV(0.001, 30);",
+    "check": "TINV",
+    "expected": 3.6459586317588712,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.001 df=100",
+    "code": "return TINV(0.001, 100);",
+    "check": "TINV",
+    "expected": 3.3904913065661364,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.000001 df=1",
+    "code": "return TINV(0.000001, 1);",
+    "check": "TINV",
+    "expected": 636619.7724193749,
+    "tolerance": 0.06366197724193749
+  },
+  {
+    "name": "TINV grid p=0.000001 df=2",
+    "code": "return TINV(0.000001, 2);",
+    "check": "TINV",
+    "expected": 999.9992500409526,
+    "tolerance": 0.00009999992500409525
+  },
+  {
+    "name": "TINV grid p=0.000001 df=10",
+    "code": "return TINV(0.000001, 10);",
+    "check": "TINV",
+    "expected": 10.516489957001836,
+    "tolerance": 0.0000010516489957001835
+  },
+  {
+    "name": "TINV grid p=0.000001 df=30",
+    "code": "return TINV(0.000001, 30);",
+    "check": "TINV",
+    "expected": 6.119075620337343,
+    "tolerance": 0.000001
+  },
+  {
+    "name": "TINV grid p=0.000001 df=100",
+    "code": "return TINV(0.000001, 100);",
+    "check": "TINV",
+    "expected": 5.213727572267411,
+    "tolerance": 0.000001
+  }
+]

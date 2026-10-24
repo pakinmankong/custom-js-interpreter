@@ -1,0 +1,367 @@
+[
+  {
+    "name": "const arrow function รองรับ block และ expression body",
+    "code": "\n    const double = value => { return value * 2; };\n    const add = (a, b) => a + b;\n    return [double(5), add(2, 3)];\n  ",
+    "expected": [
+      10,
+      5
+    ]
+  },
+  {
+    "name": "const ปฏิเสธการกำหนดค่าใหม่จาก nested function",
+    "code": "\n    const value = 1;\n    function change() { value = 2; }\n    change();\n  ",
+    "error": "Assignment to constant variable: value"
+  },
+  {
+    "name": "const function ปฏิเสธการกำหนดฟังก์ชันใหม่",
+    "code": "\n    const fn = () => 1;\n    fn = () => 2;\n  ",
+    "error": "Assignment to constant variable: fn"
+  },
+  {
+    "name": "const ยังแก้สมาชิก object และ array ได้ และ shadow ใน function ได้",
+    "code": "\n    const value = { count: 1 };\n    const items = [];\n    value.count++;\n    items.push(3);\n    function inner() { const value = 9; return value; }\n    return [value.count, items, inner()];\n  ",
+    "expected": [
+      2,
+      [
+        3
+      ],
+      9
+    ]
+  },
+  {
+    "name": "for of และ for in สร้าง const แยกในแต่ละรอบ",
+    "code": "\n    var callbacks = [];\n    for (const value of [1, 2]) { callbacks.push(() => value); }\n    for (const key in { a: 1, b: 2 }) { callbacks.push(() => key); }\n    return callbacks.map(fn => fn());\n  ",
+    "expected": [
+      1,
+      2,
+      "a",
+      "b"
+    ]
+  },
+  {
+    "name": "arrow function เก็บ lexical this แม้เรียกผ่าน object อื่น",
+    "code": "\n    var owner = { value: 10, make: function () {\n      return () => () => this.value;\n    } };\n    var other = { value: 99, fn: owner.make() };\n    var nested = other.fn();\n    return [nested(), [1].map(other.fn, { value: 50 })[0]()];\n  ",
+    "expected": [
+      10,
+      10
+    ]
+  },
+  {
+    "name": "array map ส่ง value index array และรองรับ closure",
+    "code": "\n    var factor = 2;\n    return [1, 2, 3].map((value, index, array) => value * factor + index + array.length);\n  ",
+    "expected": [
+      5,
+      8,
+      11
+    ]
+  },
+  {
+    "name": "array map รองรับ function callback และ thisArg",
+    "code": "\n    return [1, 2, 3].map(function (value) {\n      return value * this.factor;\n    }, { factor: 3 });\n  ",
+    "expected": [
+      3,
+      6,
+      9
+    ]
+  },
+  {
+    "name": "array filter เลือกสมาชิกตาม callback",
+    "code": "\n    return [1, 2, 3, 4].filter(value => value % 2 === 0);\n  ",
+    "expected": [
+      2,
+      4
+    ]
+  },
+  {
+    "name": "array reduce ส่ง accumulator และ initial value",
+    "code": "\n    return [1, 2, 3].reduce((total, value) => total + value, 10);\n  ",
+    "expected": 16
+  },
+  {
+    "name": "array forEach เรียก callback และคืน undefined",
+    "code": "\n    var total = 0;\n    var result = [1, 2, 3].forEach(function (value) {\n      total += value;\n    });\n    return [total, result];\n  ",
+    "expected": [
+      6,
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "name": "array sort เรียก comparator และแก้ array เดิม",
+    "code": "\n    var items = [10, 2, 1];\n    var result = items.sort((a, b) => a - b);\n    return [items, result === items];\n  ",
+    "expected": [
+      [
+        1,
+        2,
+        10
+      ],
+      true
+    ]
+  },
+  {
+    "name": "error ใน native callback ส่งกลับมายังผู้เรียก",
+    "code": "\n    return [1].map(value => missingValue);\n  ",
+    "error": "Undefined variable: missingValue"
+  },
+  {
+    "name": "array push เพิ่มหลายค่าและคืนความยาวใหม่",
+    "code": "\n    var items = [1, 2];\n    var length = items.push(3, 4);\n    return [length, items];\n  ",
+    "expected": [
+      4,
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ]
+  },
+  {
+    "name": "array push ใน loop",
+    "code": "\n    var items = [];\n\n    for (var i = 0; i < 10; i++) {\n      if (i % 2 == 0) {\n        items.push(i)\n      }\n    }\n  \n    return items.length\n  ",
+    "expected": 5
+  },
+  {
+    "name": "array shift ลบและคืนค่าสมาชิกตัวแรก",
+    "code": "\n    var items = [1, 2, 3];\n    var first = items.shift();\n    return [first, items];\n  ",
+    "expected": [
+      1,
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "name": "array shift บน array ว่างคืน undefined",
+    "code": "\n    var items = [];\n    var first = items.shift();\n    return [first, items];\n  ",
+    "expected": [
+      {
+        "$undefined": true
+      },
+      []
+    ]
+  },
+  {
+    "name": "array splice แทนที่สมาชิกและคืนสมาชิกที่ลบ",
+    "code": "\n    var items = [1, 2, 3, 4];\n    var removed = items.splice(1, 2, 99, 100);\n    return [removed, items];\n  ",
+    "expected": [
+      [
+        2,
+        3
+      ],
+      [
+        1,
+        99,
+        100,
+        4
+      ]
+    ]
+  },
+  {
+    "name": "array splice แทรกสมาชิกโดยไม่ลบ",
+    "code": "\n    var items = [1, 4];\n    var removed = items.splice(1, 0, 2, 3);\n    return [removed, items];\n  ",
+    "expected": [
+      [],
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ]
+  },
+  {
+    "name": "array splice รองรับ index ติดลบและละ deleteCount",
+    "code": "\n    var items = [1, 2, 3, 4];\n    var removed = items.splice(-2);\n    return [removed, items];\n  ",
+    "expected": [
+      [
+        3,
+        4
+      ],
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "array push shift splice ใช้งานต่อเนื่องและเปลี่ยน array เดียวกัน",
+    "code": "\n    var items = [1, 2, 3];\n    var alias = items;\n    items.push(4);\n    var first = items.shift();\n    var removed = items.splice(1, 1, 99);\n    return [first, removed, items, alias === items, alias];\n  ",
+    "expected": [
+      1,
+      [
+        3
+      ],
+      [
+        2,
+        99,
+        4
+      ],
+      true,
+      [
+        2,
+        99,
+        4
+      ]
+    ]
+  },
+  {
+    "name": "function ประกาศตัวแปรชื่อเดียวกับภายนอกได้โดยไม่เปลี่ยนค่าภายนอก",
+    "code": "\n    var value = \"outer\";\n    function getValue() {\n      var value = \"inner\";\n      value = \"updated inner\";\n      return value;\n    }\n    var inner = getValue();\n    return [inner, value];\n  ",
+    "expected": [
+      "updated inner",
+      "outer"
+    ]
+  },
+  {
+    "name": "parameter ชื่อเดียวกับตัวแปรภายนอกมี scope ของตัวเอง",
+    "code": "\n    var value = 10;\n    function increment(value) {\n      value++;\n      return value;\n    }\n    return [increment(20), value];\n  ",
+    "expected": [
+      21,
+      10
+    ]
+  },
+  {
+    "name": "function อ่านและแก้ค่าตัวแปรภายนอกเมื่อไม่ได้ประกาศชื่อซ้ำ",
+    "code": "\n    var count = 10;\n    function increment() {\n      count += 5;\n      return count;\n    }\n    return [increment(), count];\n  ",
+    "expected": [
+      15,
+      15
+    ]
+  },
+  {
+    "name": "ตัวแปรภายใน function ไม่รั่วออกมาภายนอก",
+    "code": "\n    function createLocal() {\n      var localOnly = 42;\n      return localOnly;\n    }\n    createLocal();\n    return localOnly;\n  ",
+    "error": "Undefined variable: localOnly"
+  },
+  {
+    "name": "การเรียก function แต่ละครั้งมีตัวแปรภายในแยกกัน",
+    "code": "\n    function next() {\n      var count = 0;\n      count++;\n      return count;\n    }\n    return [next(), next()];\n  ",
+    "expected": [
+      1,
+      1
+    ]
+  },
+  {
+    "name": "nested function ใช้ scope ที่ใกล้ที่สุดและ closure เก็บค่าไว้ได้",
+    "code": "\n    var count = 100;\n    function createCounter() {\n      var count = 0;\n      function next() {\n        count++;\n        return count;\n      }\n      return next;\n    }\n    var first = createCounter();\n    var second = createCounter();\n    return [first(), first(), second(), count];\n  ",
+    "expected": [
+      1,
+      2,
+      1,
+      100
+    ]
+  },
+  {
+    "name": "ประกาศตัวแปร var, let, const และคำนวณค่า",
+    "code": "\n    var a = 10;\n    let b = 20;\n    const c = 5;\n    var empty;\n    a += c;\n    b = b - c;\n    return [a, b, c, empty];\n  ",
+    "expected": [
+      15,
+      15,
+      5,
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "name": "for loop รวมค่าตั้งแต่ 1 ถึง 5",
+    "code": "\n    var total = 0;\n    for (var i = 1; i <= 5; i++) {\n      total += i;\n    }\n    return total;\n  ",
+    "expected": 15
+  },
+  {
+    "name": "for loop ไม่ทำงานเมื่อเงื่อนไขเริ่มต้นเป็น false",
+    "code": "\n    var count = 0;\n    for (var i = 0; i < 0; i++) {\n      count++;\n    }\n    return count;\n  ",
+    "expected": 0
+  },
+  {
+    "name": "for loop รองรับ continue และ break",
+    "code": "\n    var values = [];\n    for (var i = 0; i < 10; i++) {\n      if (i === 2) continue;\n      if (i === 5) break;\n      values.push(i);\n    }\n    return values;\n  ",
+    "expected": [
+      0,
+      1,
+      3,
+      4
+    ]
+  },
+  {
+    "name": "เงื่อนไขเปรียบเทียบและ logical operators",
+    "code": "\n    return [\n      3 > 2, 3 < 2, 3 >= 3, 2 <= 3,\n      3 === 3, 3 !== 3, 3 === \"3\",\n      true && false, false || true, !false\n    ];\n  ",
+    "expected": [
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  {
+    "name": "logical operators หยุดประเมินเมื่อทราบผลแล้ว",
+    "code": "\n    var count = 0;\n    false && count++;\n    true || count++;\n    var value = 0 ?? count++;\n    return [count, value, null ?? 10];\n  ",
+    "expected": [
+      0,
+      0,
+      10
+    ]
+  },
+  {
+    "name": "ternary condition เลือกประเมินเฉพาะ branch ที่ตรงเงื่อนไข",
+    "code": "\n    var count = 0;\n    var first = true ? \"yes\" : count++;\n    var second = false ? count++ : \"no\";\n    return [first, second, count];\n  ",
+    "expected": [
+      "yes",
+      "no",
+      0
+    ]
+  },
+  {
+    "name": "ternary condition เลือกประเมินเฉพาะ branch ที่ตรงเงื่อนไข",
+    "code": "\n    var count = 0;\n    var first = true ? \"yes\" : count++;\n    var second = false ? count++ : \"no\";\n    return [first, second, count];\n  ",
+    "expected": [
+      "yes",
+      "no",
+      0
+    ]
+  },
+  {
+    "name": "if/else score 85",
+    "code": "var score=85; if(score>=80) return 'A'; else if(score>=50) return 'B'; else return 'C';",
+    "expected": "A"
+  },
+  {
+    "name": "if/else score 65",
+    "code": "var score=65; if(score>=80) return 'A'; else if(score>=50) return 'B'; else return 'C';",
+    "expected": "B"
+  },
+  {
+    "name": "if/else score 40",
+    "code": "var score=40; if(score>=80) return 'A'; else if(score>=50) return 'B'; else return 'C';",
+    "expected": "C"
+  },
+  {
+    "name": "const value = 2",
+    "code": "const value=1; value = 2;",
+    "error": "Assignment to constant variable: value"
+  },
+  {
+    "name": "const value += 2",
+    "code": "const value=1; value += 2;",
+    "error": "Assignment to constant variable: value"
+  },
+  {
+    "name": "const value++",
+    "code": "const value=1; value++;",
+    "error": "Assignment to constant variable: value"
+  },
+  {
+    "name": "const ++value",
+    "code": "const value=1; ++value;",
+    "error": "Assignment to constant variable: value"
+  }
+]

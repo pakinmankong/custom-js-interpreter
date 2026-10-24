@@ -1,0 +1,580 @@
+[
+  {
+    "name": "declarations and reassignment",
+    "code": "var a=1;let b=2;const c=3;a+=b;return [a,b,c];"
+  },
+  {
+    "name": "uninitialized and null",
+    "code": "var a;return [a,null,typeof a];"
+  },
+  {
+    "name": "for continue break",
+    "code": "var a=[];for(var i=0;i<10;i++){if(i===2)continue;if(i===5)break;a.push(i);}return a;"
+  },
+  {
+    "name": "for empty test",
+    "code": "var i=0;for(;;){i++;if(i===3)break;}return i;"
+  },
+  {
+    "name": "while and do continue",
+    "code": "var i=0,s=0;while(i<3){i++;if(i===2)continue;s+=i;}do{s++;}while(s<5);return s;"
+  },
+  {
+    "name": "for of lexical closures",
+    "code": "var f=[];for(const n of [1,2,3]){f.push(()=>n);}return f.map(fn=>fn());"
+  },
+  {
+    "name": "for in lexical closures",
+    "code": "var f=[];for(const k in {a:1,b:2}){f.push(()=>k);}return f.map(fn=>fn());"
+  },
+  {
+    "name": "for of assignment",
+    "code": "var n;var s=0;for(n of [1,2]){s+=n;}return [s,n];"
+  },
+  {
+    "name": "scope shadowing",
+    "code": "var x=1;function f(x){let y=x+1;return y;}return [f(3),x];"
+  },
+  {
+    "name": "closure independence",
+    "code": "function factory(){var n=0;return ()=>++n;}var a=factory(),b=factory();return [a(),a(),b()];"
+  },
+  {
+    "name": "hoisted function",
+    "code": "return f(2);function f(n){return n*3;}"
+  },
+  {
+    "name": "default and rest",
+    "code": "function f(a=2,...r){return [a,r];}return [f(),f(1,2,3)];"
+  },
+  {
+    "name": "arrow default and rest",
+    "code": "const f=(a=2,...r)=>[a,r];return [f(),f(1,2,3)];"
+  },
+  {
+    "name": "method this",
+    "code": "var a={n:4,f:function(x){return this.n+x;}};return a.f(2);"
+  },
+  {
+    "name": "arrow lexical this",
+    "code": "var a={n:4,f:function(){return ()=>this.n;}};var b={n:99,f:a.f()};return b.f();"
+  },
+  {
+    "name": "sequence",
+    "code": "var a=0;return (a=2,a+1);"
+  },
+  {
+    "name": "short circuit",
+    "code": "var a=0;false&&a++;true||a++;var b=0??a++;return [a,b];"
+  },
+  {
+    "name": "ternary",
+    "code": "var n=0;return [true?++n:99,false?99:++n,n];"
+  },
+  {
+    "name": "object spread computed shorthand",
+    "code": "var a=2;return {...{x:1},a,[\"k\"+a]:3};"
+  },
+  {
+    "name": "array spread holes",
+    "code": "return [0,...[1,2],,3];"
+  },
+  {
+    "name": "compound operators",
+    "code": "var a=2;a**=3;a%=3;a*=5;a-=1;a/=2;return a;"
+  },
+  {
+    "name": "prefix and postfix",
+    "code": "var a=1;return [a++,++a,a--,--a,a];"
+  },
+  {
+    "name": "unary basics",
+    "code": "return [+\"2\",-3,!0,~2,typeof null,void 1];"
+  },
+  {
+    "name": "comparisons",
+    "code": "return [\"2\"==2,\"2\"===2,1!=2,2!==\"2\",\"ab\"<\"b\",null==false];"
+  },
+  {
+    "name": "primitive equality",
+    "code": "return [null==0,null==false,[]==0,[]==false,[1]==1,{}==\"[object Object]\"];"
+  },
+  {
+    "name": "truthiness",
+    "code": "return [!![],!!{},!!\"\",!!0,!!NUM(\"bad\"),!!0n];"
+  },
+  {
+    "name": "numeric conversion",
+    "code": "return [NUMBER(\"0b11\"),NUMBER(\"0o10\"),NUMBER(\"0x10\"),NUMBER(\"1_0\"),NUMBER(\"Infinity\"),NUMBER(\"-0\")];"
+  },
+  {
+    "name": "string conversion",
+    "code": "return [STR(1e21),STR(1e-7),STR(-0),STR([1,null,3])];"
+  },
+  {
+    "name": "BigInt arithmetic",
+    "code": "return [1n+2n,5n/2n,2n**3n,~1n];"
+  },
+  {
+    "name": "in properties",
+    "code": "var a=[1];return [0 in a,\"length\" in a,\"push\" in a,\"x\" in {x:1}];"
+  },
+  {
+    "name": "simple template",
+    "code": "return `value=${2+3}`;"
+  },
+  {
+    "name": "template object interpolation",
+    "code": "return `value=${({n:3}).n}`;"
+  },
+  {
+    "name": "escaped template interpolation",
+    "code": "return `literal=\\${1+2}`;"
+  },
+  {
+    "name": "nested template",
+    "code": "return `value=${`inner${2}`}`;"
+  },
+  {
+    "name": "optional property",
+    "code": "var a=null;return [a?.x,{x:1}?.x];"
+  },
+  {
+    "name": "regex flags",
+    "code": "return [/^hello$/i.test(\"HELLO\"),/a.b/s.test(\"a\\nb\")];"
+  },
+  {
+    "name": "push shift splice",
+    "code": "var a=[1,2];return [a.push(3),a.shift(),a.splice(0,1,9),a];"
+  },
+  {
+    "name": "pop unshift reverse",
+    "code": "var a=[1,2];return [a.unshift(0),a.pop(),a.reverse(),a];"
+  },
+  {
+    "name": "slice concat join",
+    "code": "return [[1,2,3].slice(-2),[1].concat([2],3),[1,null,3].join(\"|\")];"
+  },
+  {
+    "name": "map filter reduce foreach sort",
+    "code": "var s=0;[1,2].forEach(x=>s+=x);return [[1,2].map(x=>x*2),[1,2].filter(x=>x>1),[1,2].reduce((a,b)=>a+b,0),s,[10,2].sort((a,b)=>a-b)];"
+  },
+  {
+    "name": "callback thisArg",
+    "code": "return [1,2].map(function(v){return v*this.n;},{n:3});"
+  },
+  {
+    "name": "array search",
+    "code": "return [[1,2].includes(2),[1,2].indexOf(3),[1,2].find(x=>x>1),[1,2].findIndex(x=>x>1),[1,2].some(x=>x>1),[1,2].every(x=>x>0)];"
+  },
+  {
+    "name": "splice negative delete count",
+    "code": "var a=[1,2,3];return [a.splice(1,-1),a];"
+  },
+  {
+    "name": "splice nonfinite",
+    "code": "var a=[1,2,3];return [a.splice(1,NUM(\"bad\")),a];"
+  },
+  {
+    "name": "map mutation",
+    "code": "var a=[1,2];return [a.map((v,i)=>{a.push(9);return v;}),a];"
+  },
+  {
+    "name": "reduce length mutation",
+    "code": "var a=[1,2,3];return a.reduce((sum,v,i)=>{if(i===0)a.pop();return sum+v;},0);"
+  },
+  {
+    "name": "array delete holes",
+    "code": "var a=[1,2];delete a[0];return [a.length,0 in a,a.map(x=>x+1)];"
+  },
+  {
+    "name": "array length assignment",
+    "code": "var a=[1,2];a.length=4;a[3]=9;return [a,a.length];"
+  },
+  {
+    "name": "array index spellings",
+    "code": "var a=[1,2];return [a[\"01\"],a[\"1\"],a[\"-0\"]];"
+  },
+  {
+    "name": "array from index",
+    "code": "return [[1,2,1].indexOf(1,-1),[1,2].includes(1,1)];"
+  },
+  {
+    "name": "strings",
+    "code": "return [\" Ab \".trim(),\"Ab\".toLowerCase(),\"ab\".toUpperCase(),\"a,b\".split(\",\"),\"abc\".substring(2,0),\"abc\".slice(-2),\"a\".repeat(2)];"
+  },
+  {
+    "name": "string optional arguments",
+    "code": "return [\"abcabc\".indexOf(\"a\",1),\"abcabc\".includes(\"a\",1),\"abcabc\".startsWith(\"b\",1),\"abcabc\".endsWith(\"b\",2)];"
+  },
+  {
+    "name": "string replace regex",
+    "code": "return \"a1a2\".replace(/a/g,\"b\");"
+  },
+  {
+    "name": "string unicode indexing",
+    "code": "return [\"😀\".length,\"😀\".split(\"\"),[...\"😀\"]];"
+  },
+  {
+    "name": "custom numeric keys",
+    "code": "return [MAP([{v:\"2\"},{v:3}],\"v\",[],true),SUM([{v:null},{v:4}],\"v\")];"
+  },
+  {
+    "name": "custom SIG branches",
+    "code": "return [SIG(0),SIG(0.00123),SIG(0.1),SIG(12.34),SIG(300),SIG(-1234)];"
+  },
+  {
+    "name": "custom decimal precision",
+    "code": "return [DECIMAL_PLACES(1e-7),FORMAT_EXPO(0),FORMAT_EXPO(1234),FIXED(1.005,2),FIXED(1e21,2)];"
+  },
+  {
+    "name": "custom number edge",
+    "code": "return [NUMBER(\"0b10\"),NUM(\"0o10\"),SUM([\"1\",null,false]),MIN([]),MAX([])];"
+  },
+  {
+    "name": "custom round zeros",
+    "code": "return [ROUND(-0.1),ROUNDUP(-0.1),ROUNDDOWN(-0.1),INT(-0.1)];"
+  },
+  {
+    "name": "custom row local scope",
+    "code": "function f(){var CURRENT_ROW=[0];return [ROW([3,4]),GET_CURRENT_ROW_INDEX()];}return f();"
+  },
+  {
+    "name": "custom goal block return",
+    "code": "var k=2;return GOAL_SEEK(function(x){return x*k;},10);",
+    "tolerance": 1e-06
+  },
+  {
+    "name": "custom matrix pivot",
+    "code": "return MMULT([[0,1],[1,0]],MINVERSE([[0,1],[1,0]]));"
+  },
+  {
+    "name": "data forward local columns",
+    "code": "return DATA.A;",
+    "variables": {
+      "DATA": {
+        "columns": [
+          {
+            "name": "A",
+            "formula": "return B+1"
+          },
+          {
+            "name": "B",
+            "formula": "return 10"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "data object columns local",
+    "code": "return DATA.A;",
+    "variables": {
+      "DATA": {
+        "columns": {
+          "A": "return B*2",
+          "B": "return 10"
+        }
+      }
+    }
+  },
+  {
+    "name": "data children alias",
+    "code": "return RECORDS.group.A;",
+    "variables": {
+      "_RECORDS_": {
+        "children": {
+          "group": {
+            "A": "return 5"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "data arrays name and index",
+    "code": "return [DATA.group.A,DATA.group[0]];",
+    "variables": {
+      "DATA": {
+        "group": [
+          {
+            "name": "A",
+            "formula": "return 5"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "data computed path",
+    "code": "var key=\"B\";return DATA[key];",
+    "variables": {
+      "DATA": {
+        "B": "return 10"
+      }
+    }
+  },
+  {
+    "name": "data cached evaluation",
+    "code": "var n=0;var first=DATA.A;return [first,DATA.A,n];",
+    "variables": {
+      "DATA": {
+        "A": "n++;return n;"
+      }
+    }
+  },
+  {
+    "name": "data null value",
+    "code": "return DATA.A;",
+    "variables": {
+      "DATA": {
+        "A": null
+      }
+    }
+  },
+  {
+    "name": "data global name precedence",
+    "code": "var B=9;return DATA.A;",
+    "variables": {
+      "DATA": {
+        "A": "return B",
+        "B": "return 1"
+      }
+    }
+  },
+  {
+    "name": "missing variable",
+    "code": "return missing;",
+    "error": "Undefined variable: missing",
+    "variables": {}
+  },
+  {
+    "name": "missing function",
+    "code": "return missing();",
+    "error": "Undefined function",
+    "variables": {}
+  },
+  {
+    "name": "const reassignment",
+    "code": "const a=1;a=2;",
+    "error": "Assignment to constant variable",
+    "variables": {}
+  },
+  {
+    "name": "const nested reassignment",
+    "code": "const a=1;function f(){a=2;}f();",
+    "error": "Assignment to constant variable",
+    "variables": {}
+  },
+  {
+    "name": "missing data",
+    "code": "return DATA.missing;",
+    "error": "Undefined reference",
+    "variables": {
+      "DATA": {}
+    }
+  },
+  {
+    "name": "data cycle",
+    "code": "return DATA.A;",
+    "error": "Circular dependency",
+    "variables": {
+      "DATA": {
+        "A": "return B",
+        "B": "return A"
+      }
+    }
+  },
+  {
+    "name": "callback error",
+    "code": "return [1].map(x=>missing);",
+    "error": "Undefined variable",
+    "variables": {}
+  },
+  {
+    "name": "reduce empty",
+    "code": "return [].reduce((a,b)=>a+b);",
+    "error": "Reduce of empty array",
+    "variables": {}
+  },
+  {
+    "name": "coercion null",
+    "code": "return [(null)==(null),(null)==(false),(null)==(0),(null)==(1),(null)==(\"0\"),(null)==([])];"
+  },
+  {
+    "name": "coercion false",
+    "code": "return [(false)==(null),(false)==(false),(false)==(0),(false)==(1),(false)==(\"0\"),(false)==([])];"
+  },
+  {
+    "name": "coercion true",
+    "code": "return [(true)==(null),(true)==(false),(true)==(0),(true)==(1),(true)==(\"0\"),(true)==([])];"
+  },
+  {
+    "name": "coercion 0",
+    "code": "return [(0)==(null),(0)==(false),(0)==(0),(0)==(1),(0)==(\"0\"),(0)==([])];"
+  },
+  {
+    "name": "coercion 1",
+    "code": "return [(1)==(null),(1)==(false),(1)==(0),(1)==(1),(1)==(\"0\"),(1)==([])];"
+  },
+  {
+    "name": "coercion \"\"",
+    "code": "return [(\"\")==(null),(\"\")==(false),(\"\")==(0),(\"\")==(1),(\"\")==(\"0\"),(\"\")==([])];"
+  },
+  {
+    "name": "coercion \"0\"",
+    "code": "return [(\"0\")==(null),(\"0\")==(false),(\"0\")==(0),(\"0\")==(1),(\"0\")==(\"0\"),(\"0\")==([])];"
+  },
+  {
+    "name": "coercion []",
+    "code": "return [([])==(null),([])==(false),([])==(0),([])==(1),([])==(\"0\"),([])==([])];"
+  },
+  {
+    "name": "coercion [1]",
+    "code": "return [([1])==(null),([1])==(false),([1])==(0),([1])==(1),([1])==(\"0\"),([1])==([])];"
+  },
+  {
+    "name": "coercion {}",
+    "code": "return [({})==(null),({})==(false),({})==(0),({})==(1),({})==(\"0\"),({})==([])];"
+  },
+  {
+    "name": "operator +",
+    "code": "return [(2)+(3),(\"2\")+(3),(null)+(2),(false)+(2),([])+(2)];"
+  },
+  {
+    "name": "operator -",
+    "code": "return [(2)-(3),(\"2\")-(3),(null)-(2),(false)-(2),([])-(2)];"
+  },
+  {
+    "name": "operator *",
+    "code": "return [(2)*(3),(\"2\")*(3),(null)*(2),(false)*(2),([])*(2)];"
+  },
+  {
+    "name": "operator /",
+    "code": "return [(2)/(3),(\"2\")/(3),(null)/(2),(false)/(2),([])/(2)];"
+  },
+  {
+    "name": "operator %",
+    "code": "return [(2)%(3),(\"2\")%(3),(null)%(2),(false)%(2),([])%(2)];"
+  },
+  {
+    "name": "operator **",
+    "code": "return [(2)**(3),(\"2\")**(3),(null)**(2),(false)**(2),([])**(2)];"
+  },
+  {
+    "name": "operator <",
+    "code": "return [(2)<(3),(\"2\")<(3),(null)<(2),(false)<(2),([])<(2)];"
+  },
+  {
+    "name": "operator <=",
+    "code": "return [(2)<=(3),(\"2\")<=(3),(null)<=(2),(false)<=(2),([])<=(2)];"
+  },
+  {
+    "name": "operator >",
+    "code": "return [(2)>(3),(\"2\")>(3),(null)>(2),(false)>(2),([])>(2)];"
+  },
+  {
+    "name": "operator >=",
+    "code": "return [(2)>=(3),(\"2\")>=(3),(null)>=(2),(false)>=(2),([])>=(2)];"
+  },
+  {
+    "name": "large literal precision",
+    "code": "return [1000000000000000001===1000000000000000000,STR(1000000000000000001),STR(1e20)];"
+  },
+  {
+    "name": "bitwise int32",
+    "code": "return [~4294967295,~2147483648,~NUM(\"bad\"),~(1/0)];"
+  },
+  {
+    "name": "mixed BigInt error",
+    "code": "return 1n+2;",
+    "error": "BigInt"
+  },
+  {
+    "name": "BigInt unary plus error",
+    "code": "return +1n;",
+    "error": "BigInt"
+  },
+  {
+    "name": "global regex state",
+    "code": "var r=/a/g;return [r.test(\"aba\"),r.lastIndex,r.test(\"aba\"),r.lastIndex,r.test(\"aba\"),r.lastIndex];"
+  },
+  {
+    "name": "sticky regex state",
+    "code": "var r=/a/y;r.lastIndex=1;return [r.test(\"ba\"),r.lastIndex,r.test(\"ba\"),r.lastIndex];"
+  },
+  {
+    "name": "regexp exec",
+    "code": "var m=/(a)(b)/.exec(\"zab\");return [m,m.index,m.input];"
+  },
+  {
+    "name": "map deleted last index",
+    "code": "var a=[1,2,3];var b=a.map((v,i)=>{if(i===0)delete a[2];return v*2;});return [b,b.length,2 in b];"
+  },
+  {
+    "name": "reduce sparse without initial value",
+    "code": "var a=[1,2,3];delete a[0];return a.reduce((a,b)=>a+b);"
+  },
+  {
+    "name": "array extra property",
+    "code": "var a=[1];a[\"01\"]=9;return [a[\"01\"],a.length,\"01\" in a];"
+  },
+  {
+    "name": "delete array length",
+    "code": "var a=[1];return [delete a.length,a.length];",
+    "error": "Cannot delete property"
+  },
+  {
+    "name": "object numeric keys order",
+    "code": "var a=[];for(var k in {2:\"b\",1:\"a\",z:\"z\"}){a.push(k);}return a;"
+  },
+  {
+    "name": "MAP object numeric keys order",
+    "code": "return MAP({2:{v:2},1:{v:1}},\"v\");"
+  },
+  {
+    "name": "host injected function",
+    "code": "return HOST_ADD(2,3);"
+  },
+  {
+    "name": "host callback expression",
+    "code": "return HOST_APPLY(x=>x*2,3);"
+  },
+  {
+    "name": "host callback block and closure",
+    "code": "var n=4;return HOST_APPLY(function(x){return x+n;},3);"
+  },
+  {
+    "name": "host returned callback",
+    "code": "var fn=HOST_IDENTITY(x=>x+1);return fn(3);"
+  },
+  {
+    "name": "template complex quoted braces",
+    "code": "return `x=${\"}\"} ${({a:{b:3}}).a.b}`;"
+  },
+  {
+    "name": "string split regex",
+    "code": "return \"a1b2c\".split(/[0-9]/);"
+  },
+  {
+    "name": "string split captures",
+    "code": "return \"a1b2c\".split(/([0-9])/);"
+  },
+  {
+    "name": "string replace replacement tokens",
+    "code": "return \"abc\".replace(\"b\",\"[$&]$$\");"
+  },
+  {
+    "name": "string replace callback",
+    "code": "return \"ab\".replace(/a/g,(match,index)=>match+index);"
+  },
+  {
+    "name": "default number formats",
+    "code": "return [FORMAT_EXPO(1),FORMAT_EXPO(0),STR(1e-6),STR(1e-5)];"
+  },
+  {
+    "name": "in primitive error",
+    "code": "return \"x\" in 3;",
+    "error": "in.*(?:operator|non-object)"
+  }
+]

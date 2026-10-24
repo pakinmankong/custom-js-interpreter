@@ -1,0 +1,56 @@
+{
+  "_SOURCE_": {
+    "GROUP1": {
+      "ddd": {
+        "ddd": 111
+      }
+    }
+  },
+  "_UUC_DETAIL": {
+    "field1": "return _UUC_DETAIL.field2 + 100",
+    "field2": "return 100"
+  },
+  "_RECORDS_": {
+    "SUMMARY": {
+      "field1": "return _RECORDS_.OUTER_GROUP.A - _RECORDS_.OUTER_GROUP.B"
+    },
+    "OUTER_GROUP": {
+      "columns": [
+        {
+          "name": "A",
+          "formula": "return _RECORDS_.OUTER_GROUP.GROUP1.A + _RECORDS_.OUTER_GROUP.GROUP2.A"
+        },
+        {
+          "name": "B",
+          "formula": "return _RECORDS_.OUTER_GROUP.GROUP2.B"
+        }
+      ],
+      "children": {
+        "GROUP1": [
+          {
+            "name": "A",
+            "formula": "return RECORDS.OUTER_GROUP.GROUP2.A * 1000"
+          }
+        ],
+        "GROUP2": [
+          {
+            "name": "A",
+            "formula": "return RECORDS.OUTER_GROUP.GROUP1.B + 100"
+          },
+          {
+            "name": "B",
+            "formula": "return 500"
+          }
+        ]
+      }
+    }
+  },
+  "_RESULTS_": {
+    "GROUP1": {
+      "columns": {
+        "A": "return _RESULTS_.GROUP1.B + 100",
+        "B": "return _RECORDS_.SUMMARY.field1"
+      }
+    }
+  }
+}

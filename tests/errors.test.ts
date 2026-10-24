@@ -16,8 +16,8 @@ test("external runtime error formatting uses node loc.start and preserves direct
   assert.equal(error.column, 0);
   assert.equal(error.length, 5);
   assert.equal(error.position, (raw as any).pos);
-  assert.match(formatInterpreterError(error), /> 3 \| sdfds/);
-  assert.match(formatInterpreterError(error), /\^\^\^\^\^/);
+  assert.match(formatInterpreterError(error), /error at line 3,/);
+  assert.doesNotMatch(formatInterpreterError(error), /\n(?:>|    \|)/);
   assert.equal(createInterpreterError(error, "script", 1), error);
 });
 
@@ -27,7 +27,7 @@ test("syntax error formatting supports Babel loc.line", () => {
     const error = createInterpreterError(raw, "script", interpreter.lineOffset, interpreter.userCode);
     assert.equal(error.line, 2);
     assert.equal(error.position, raw.pos);
-    assert.match(formatInterpreterError(error), /> 2 \| const =/);
+    assert.match(formatInterpreterError(error), /error at line 2,/);
     return true;
   });
 });
@@ -35,7 +35,7 @@ test("syntax error formatting supports Babel loc.line", () => {
 test("external error formatting reads position from loc index and handles CR newlines", () => {
   const error = createInterpreterError({message: "bad", loc: {start: {line: 2, column: 1, index: 3}}}, "script", 0, "a\rbad");
   assert.equal(error.position, 3);
-  assert.match(formatInterpreterError(error), /> 2 \| bad/);
+  assert.match(formatInterpreterError(error), /error at line 2,/);
 });
 
 test("runtime line formatting supports every JavaScript newline after ignored metadata", () => {
@@ -46,7 +46,7 @@ test("runtime line formatting supports every JavaScript newline after ignored me
       const error = createInterpreterError(raw, 'script', interpreter.lineOffset, code);
       assert.equal(error.line, 2);
       assert.equal(error.column, 0);
-      assert.match(formatInterpreterError(error), /> 2 \| sdfds/);
+      assert.match(formatInterpreterError(error), /error at line 2,/);
       return true;
     });
   }
@@ -65,7 +65,7 @@ test("nested data formula errors retain the actual source rather than the caller
     assert.equal(error.source, '_RECORDS_.MAIN_GROUP');
     assert.equal(error.sourceCode, formula);
     assert.equal(error.line, 1);
-    assert.match(formatInterpreterError(error), /> 1 \| return 123invalid/);
+    assert.match(formatInterpreterError(error), /_RECORDS_\.MAIN_GROUP error at line 1,/);
     assert.equal(interpreter.dataResolver.evaluating.length, 0);
     return true;
   });

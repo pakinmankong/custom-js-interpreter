@@ -68,20 +68,8 @@ export function formatInterpreterError(
   error: InterpreterError,
   sourceCode?: string,
 ) {
-  var code = sourceCode ?? error.sourceCode ?? "";
-
-  var lines = code.split(/\r\n|[\n\r\u2028\u2029]/);
-
-  var lineText = lines[error.line - 1] ?? "";
-
-  const visibleLength = Math.max(1, Math.min(error.length, lineText.length - error.column));
-  var pointer = " ".repeat(Math.max(0, error.column)) + "^".repeat(visibleLength);
-
   return [
     `${error.source} error at line ${error.line}, column ${error.column}, position ${error.position}, length ${error.length}`,
-    "",
-    `> ${error.line} | ${lineText}`,
-    `    | ${pointer}`,
     "",
     error.message,
   ].join("\n");

@@ -50,15 +50,9 @@ InterpreterError createInterpreterError(
 }
 
 String formatInterpreterError(InterpreterError error, [String? sourceCode]) {
-  final lines = (sourceCode ?? error.sourceCode ?? '').split(
-    RegExp(r'\r\n|[\n\r\u2028\u2029]'),
-  );
   final line = error.line ?? 1;
   final column = error.column ?? 0;
-  final text = line > 0 && line <= lines.length ? lines[line - 1] : '';
   final length = error.length ?? 1;
-  final available = text.length - column;
-  final visibleLength = available < 1 ? 1 : length.clamp(1, available);
   return '${error.source} error at line $line, column $column, position ${error.position}, length $length\n\n'
-      '> $line | $text\n    | ${' ' * (column < 0 ? 0 : column)}${'^' * visibleLength}\n\n${error.message}';
+      '${error.message}';
 }

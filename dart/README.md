@@ -89,6 +89,30 @@ in `lib/builtins.dart` remains a compatibility wrapper for `createFunctions()`.
 Both now register all 51 formula functions plus print.
 The CLI example uses `dart:io`; the public library does not.
 
+## Print callback
+
+Use `createFunctions(output: ...)` to receive each interpreted `print(...)` call
+in Flutter or Dart. The callback receives all arguments as one list, preserving
+their values without converting them to strings:
+
+```dart
+final logs = <List<dynamic>>[];
+final interpreter = InterpreterService(InterpreterContext(
+  functions: createFunctions(
+    output: (values) {
+      logs.add(values);
+      // Update application state or forward values to a logger here.
+    },
+  ),
+));
+interpreter.execute('print("items:", [1, 2, 3]); print("done");');
+// logs: [["items:", [1, 2, 3]], ["done"]]
+```
+
+The callback runs synchronously. To format a line for display, use
+`values.map(jsString).join(' ')`. Without an output callback, the Dart built-in
+print discards output.
+
 ## Formula functions and services
 
 `createFunctions()` is exported by the public library. JavaScript parameters have

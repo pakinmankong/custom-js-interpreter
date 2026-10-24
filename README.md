@@ -63,6 +63,27 @@ const interpreter = new InterpreterService({
 console.log(interpreter.execute('return DOUBLE(5);')); // 10
 ```
 
+## รับ callback จาก print
+
+ส่ง callback ผ่าน `output` เพื่อรับทุกครั้งที่โค้ดเรียก `print(...)`:
+
+```ts
+const logs: unknown[][] = [];
+const interpreter = new InterpreterService({
+  functions: createFunctions({
+    output: (...values) => {
+      logs.push(values);
+      // ส่ง values ไปแสดงใน UI หรือเก็บ log ได้ที่นี่
+    },
+  }),
+});
+interpreter.execute('print("items:", [1, 2, 3]); print("done");');
+// logs: [["items:", [1, 2, 3]], ["done"]]
+```
+
+callback ทำงานแบบ synchronous และได้รับค่าที่ยังไม่แปลงเป็นข้อความ
+เมื่อกำหนด `output` จะใช้ callback นี้แทน `console.log`
+
 ## Semicolon
 
 โค้ดที่ส่งเข้า interpreter ไม่จำเป็นต้องใส่ `;` ท้าย statement เมื่อจบด้วย

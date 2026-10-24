@@ -52,12 +52,25 @@ Future<void> main() async {
     functions.addAll({
       'HOST_ADD': NativeFunction((args, t) => args[0] + args[1]),
       'HOST_APPLY': NativeFunction(
-        (args, t) => interpreter.callFunction(args[0], [args[1]], undefined),
+        (args, t) => fixture['async'] == true
+            ? interpreter.callFunctionAsync(args[0], [args[1]], undefined)
+            : interpreter.callFunction(args[0], [args[1]], undefined),
       ),
       'HOST_IDENTITY': NativeFunction((args, t) => args[0]),
+      'DOUBLE': (dynamic n) async => n * 2,
+      'COMPARE': (dynamic a, dynamic b) async => a - b,
+      'FAIL': () async {
+        throw JsError('service failed');
+      },
     });
+    if (fixture['group'] == 'async') {
+      functions['FIND_STD_ERROR'] = (dynamic id, dynamic value) async => {
+        'uncertainty': value * 2,
+      };
+    }
     interpreter = InterpreterService(
-      InterpreterContext(resolver: true, 
+      InterpreterContext(
+        resolver: true,
         astBundle: fixture.containsKey('astCache')
             ? CompiledAstBundle.fromJson(fixture['astCache'])
             : null,
@@ -73,7 +86,9 @@ Future<void> main() async {
       ),
     );
     try {
-      final value = interpreter.execute(fixture['code']);
+      final value = fixture['async'] == true
+          ? await interpreter.executeAsync(fixture['code'])
+          : interpreter.execute(fixture['code']);
       results.add({
         'status': 'ok',
         'value': encode(value),

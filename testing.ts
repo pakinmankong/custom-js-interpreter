@@ -3,6 +3,7 @@ import "./tests/semicolon.test.js";
 import "./tests/ast_cache.test.js";
 import "./tests/functions.test.js";
 import "./tests/errors.test.js";
+import "./tests/async.test.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import InterpreterService from "./lib/interpreter_service.js";

@@ -188,7 +188,9 @@ typedef NativeBody = dynamic Function(List<dynamic> args, dynamic thisValue);
 
 class NativeFunction implements JsCallable {
   final NativeBody body;
-  NativeFunction(this.body);
+  final NativeBody? asyncBody;
+  final String? arrayMethod;
+  NativeFunction(this.body, {this.asyncBody, this.arrayMethod});
   @override
   dynamic invoke(List<dynamic> args, dynamic thisValue) =>
       body(args, thisValue);
@@ -376,6 +378,7 @@ class JsRuntime {
       'map',
       'filter',
       'reduce',
+      'reduceRight',
       'forEach',
       'sort',
       'reverse',
@@ -477,23 +480,26 @@ class JsRuntime {
               ? List<dynamic>.filled(length, arrayHole)
               : <dynamic>[];
           dynamic accumulator = args.length > 1 ? args[1] : undefined;
-          var start = 0;
-          if (name == 'reduce' && args.length < 2) {
-            while (start < length && identical(list[start], arrayHole)) {
-              start++;
+          final reduce = name == 'reduce' || name == 'reduceRight';
+          final step = name == 'reduceRight' ? -1 : 1;
+          var start = step > 0 ? 0 : length - 1;
+          if (reduce && args.length < 2) {
+            while (start >= 0 && start < length && identical(list[start], arrayHole)) {
+              start += step;
             }
-            if (start >= length)
+            if (start < 0 || start >= length)
               throw JsError('Reduce of empty array with no initial value');
-            accumulator = list[start++];
+            accumulator = list[start];
+            start += step;
           }
-          for (var i = start; i < length; i++) {
+          for (var i = start; i >= 0 && i < length; i += step) {
             if (i >= list.length) continue;
             if (identical(list[i], arrayHole) &&
                 name != 'find' &&
                 name != 'findIndex')
               continue;
             final value = arrayValue(list[i]);
-            final result = name == 'reduce'
+            final result = reduce
                 ? call(callback, [accumulator, value, i, list], undefined)
                 : call(callback, [value, i, list], thisArg);
             switch (name) {
@@ -502,6 +508,7 @@ class JsRuntime {
               case 'filter':
                 if (truthy(result)) results.add(value);
               case 'reduce':
+              case 'reduceRight':
                 accumulator = result;
               case 'find':
                 if (truthy(result)) return value;
@@ -515,14 +522,14 @@ class JsRuntime {
           }
           return switch (name) {
             'map' || 'filter' => results,
-            'reduce' => accumulator,
+            'reduce' || 'reduceRight' => accumulator,
             'findIndex' => -1,
             'some' => false,
             'every' => true,
             _ => undefined,
           };
       }
-    });
+    }, arrayMethod: name);
   }
 
   String _replace(String input, dynamic search, dynamic replacement) {
@@ -563,6 +570,87 @@ class JsRuntime {
         result.write(
           jsString(
             call(replacement, [...match.groups, match.start, input], undefined),
+          ),
+        );
+      } else {
+        final text = jsString(replacement);
+        result.write(
+          text.replaceAllMapped(RegExp(r'''\$(\$|&|`|'|[0-9]{1,2})'''), (
+            token,
+          ) {
+            final key = token[1]!;
+            if (key == r'$') return r'$';
+            if (key == '&') return jsString(match.groups[0]);
+            if (key == '`') return input.substring(0, match.start);
+            if (key == "'") return input.substring(match.end);
+            final index = int.parse(key);
+            if (index > 0 && index < match.groups.length)
+              return isNullish(match.groups[index])
+                  ? ''
+                  : jsString(match.groups[index]);
+            if (key.length == 2 &&
+                index >= 10 &&
+                index ~/ 10 < match.groups.length) {
+              final group = match.groups[index ~/ 10];
+              return '${isNullish(group) ? '' : jsString(group)}${key[1]}';
+            }
+            return token[0]!;
+          }),
+        );
+      }
+      last = match.end;
+    }
+    result.write(input.substring(last));
+    return result.toString();
+  }
+
+  Future<String> replaceAsync(
+    String input,
+    dynamic search,
+    dynamic replacement,
+    CallFunction asyncCall,
+  ) async {
+    final matches = <({int start, int end, List<dynamic> groups})>[];
+    if (search is JsRegExp) {
+      if (search.global) search.lastIndex = 0;
+      final start = search.sticky ? search.lastIndex : 0;
+      if (start >= 0 && start <= input.length) {
+        for (final match in search.regex.allMatches(input, start)) {
+          if (search.sticky &&
+              match.start != (matches.isEmpty ? start : matches.last.end))
+            break;
+          matches.add((
+            start: match.start,
+            end: match.end,
+            groups: [
+              for (var i = 0; i <= match.groupCount; i++)
+                match.group(i) ?? undefined,
+            ],
+          ));
+          if (!search.global) break;
+        }
+      }
+      if (search.global)
+        search.lastIndex = 0;
+      else if (search.sticky)
+        search.lastIndex = matches.isEmpty ? 0 : matches.last.end;
+    } else {
+      final text = jsString(search), start = input.indexOf(jsString(search));
+      if (start >= 0)
+        matches.add((start: start, end: start + text.length, groups: [text]));
+    }
+    final result = StringBuffer();
+    var last = 0;
+    for (final match in matches) {
+      result.write(input.substring(last, match.start));
+      if (replacement is JsCallable || replacement is Function) {
+        result.write(
+          jsString(
+            await asyncCall(replacement, [
+              ...match.groups,
+              match.start,
+              input,
+            ], undefined),
           ),
         );
       } else {

@@ -509,62 +509,129 @@ Map<String, dynamic> createFunctions({
         );
       return _sync(provider(from, to, v), 'UNIT_CONVERT');
     }),
-    'GOAL_SEEK': NativeFunction((a, t) {
-      final fn = _arg(a, 0);
-      if (fn is! JsCallable && fn is! Function)
-        throw JsError('GOAL_SEEK() <function> must be a function');
-      final goal = _numeric(_arg(a, 1), 'GOAL_SEEK', 'target'),
-          tol = _numeric(_arg(a, 2, 1e-6), 'GOAL_SEEK', 'tolerance'),
-          iterations = _integer(_arg(a, 3, 100), 'GOAL_SEEK', 'maxIterations');
-      if (tol <= 0 || iterations <= 0)
-        throw JsError(
-          'GOAL_SEEK() tolerance and maxIterations must be positive',
-        );
-      num evaluate(num x) {
-        final dynamic value = fn is InterpreterFunction
-            ? fn.interpreter.callFunction(fn, [x], undefined)
-            : fn is JsCallable
-            ? fn.invoke([x], undefined)
-            : Function.apply(fn as Function, [x]);
-        return _numeric(
-              _sync(value, 'GOAL_SEEK'),
+    'GOAL_SEEK': NativeFunction(
+      (a, t) {
+        final fn = _arg(a, 0);
+        if (fn is! JsCallable && fn is! Function)
+          throw JsError('GOAL_SEEK() <function> must be a function');
+        final goal = _numeric(_arg(a, 1), 'GOAL_SEEK', 'target'),
+            tol = _numeric(_arg(a, 2, 1e-6), 'GOAL_SEEK', 'tolerance'),
+            iterations = _integer(
+              _arg(a, 3, 100),
               'GOAL_SEEK',
-              'callback result',
-            ) -
-            goal;
-      }
+              'maxIterations',
+            );
+        if (tol <= 0 || iterations <= 0)
+          throw JsError(
+            'GOAL_SEEK() tolerance and maxIterations must be positive',
+          );
+        num evaluate(num x) {
+          final dynamic value = fn is InterpreterFunction
+              ? fn.interpreter.callFunction(fn, [x], undefined)
+              : fn is JsCallable
+              ? fn.invoke([x], undefined)
+              : Function.apply(fn as Function, [x]);
+          return _numeric(
+                _sync(value, 'GOAL_SEEK'),
+                'GOAL_SEEK',
+                'callback result',
+              ) -
+              goal;
+        }
 
-      final f0 = evaluate(0);
-      if (f0.abs() <= tol) return 0;
-      var low = 0.0, high = 0.0, step = 1.0, found = false;
-      for (var i = 0; i < iterations; i++) {
-        if (evaluate(-step).sign != f0.sign) {
-          low = -step;
-          high = 0;
-          found = true;
-          break;
+        final f0 = evaluate(0);
+        if (f0.abs() <= tol) return 0;
+        var low = 0.0, high = 0.0, step = 1.0, found = false;
+        for (var i = 0; i < iterations; i++) {
+          if (evaluate(-step).sign != f0.sign) {
+            low = -step;
+            high = 0;
+            found = true;
+            break;
+          }
+          if (evaluate(step).sign != f0.sign) {
+            low = 0;
+            high = step;
+            found = true;
+            break;
+          }
+          step *= 2;
         }
-        if (evaluate(step).sign != f0.sign) {
-          low = 0;
-          high = step;
-          found = true;
-          break;
+        if (!found) throw JsError('Goal Seek: target could not be found');
+        var fLow = evaluate(low);
+        for (var i = 0; i < iterations; i++) {
+          final mid = (low + high) / 2, fMid = evaluate(mid);
+          if (fMid.abs() <= tol) return mid;
+          if (fLow.sign != fMid.sign) {
+            high = mid;
+          } else {
+            low = mid;
+            fLow = fMid;
+          }
         }
-        step *= 2;
-      }
-      if (!found) throw JsError('Goal Seek: target could not be found');
-      var fLow = evaluate(low);
-      for (var i = 0; i < iterations; i++) {
-        final mid = (low + high) / 2, fMid = evaluate(mid);
-        if (fMid.abs() <= tol) return mid;
-        if (fLow.sign != fMid.sign) {
-          high = mid;
-        } else {
-          low = mid;
-          fLow = fMid;
+        throw JsError('Goal Seek: did not converge within maxIterations');
+      },
+      asyncBody: (a, t) async {
+        final fn = _arg(a, 0);
+        if (fn is! JsCallable && fn is! Function)
+          throw JsError('GOAL_SEEK() <function> must be a function');
+        final goal = _numeric(_arg(a, 1), 'GOAL_SEEK', 'target'),
+            tol = _numeric(_arg(a, 2, 1e-6), 'GOAL_SEEK', 'tolerance'),
+            iterations = _integer(
+              _arg(a, 3, 100),
+              'GOAL_SEEK',
+              'maxIterations',
+            );
+        if (tol <= 0 || iterations <= 0)
+          throw JsError(
+            'GOAL_SEEK() tolerance and maxIterations must be positive',
+          );
+        Future<num> evaluate(num x) async {
+          final dynamic value = await (fn is InterpreterFunction
+              ? fn.interpreter.callFunction(fn, [x], undefined)
+              : fn is JsCallable
+              ? fn.invoke([x], undefined)
+              : Function.apply(fn as Function, [x]));
+          return _numeric(
+                _sync(value, 'GOAL_SEEK'),
+                'GOAL_SEEK',
+                'callback result',
+              ) -
+              goal;
         }
-      }
-      throw JsError('Goal Seek: did not converge within maxIterations');
-    }),
+
+        final f0 = (await evaluate(0));
+        if (f0.abs() <= tol) return 0;
+        var low = 0.0, high = 0.0, step = 1.0, found = false;
+        for (var i = 0; i < iterations; i++) {
+          if ((await evaluate(-step)).sign != f0.sign) {
+            low = -step;
+            high = 0;
+            found = true;
+            break;
+          }
+          if ((await evaluate(step)).sign != f0.sign) {
+            low = 0;
+            high = step;
+            found = true;
+            break;
+          }
+          step *= 2;
+        }
+        if (!found) throw JsError('Goal Seek: target could not be found');
+        var fLow = (await evaluate(low));
+        for (var i = 0; i < iterations; i++) {
+          final mid = (low + high) / 2, fMid = (await evaluate(mid));
+          if (fMid.abs() <= tol) return mid;
+          if (fLow.sign != fMid.sign) {
+            high = mid;
+          } else {
+            low = mid;
+            fLow = fMid;
+          }
+        }
+        throw JsError('Goal Seek: did not converge within maxIterations');
+      },
+    ),
   };
 }

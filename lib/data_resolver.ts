@@ -268,4 +268,170 @@ export default class DataResolver {
 
     return current;
   }
+
+  async resolveAsync(rootName: string, path: string[], env: Env) : Promise<any> {
+    var key = [rootName, ...path].join(".");
+
+    if (this.cache.has(key)) {
+      return this.cache.get(key);
+    }
+
+    if (this.evaluating.includes(key)) {
+      var index = this.evaluating.indexOf(key);
+
+      var cycle = this.evaluating.slice(index).concat(key).join(" -> ");
+
+      throw new Error(`Circular dependency: ${cycle}`);
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(this.variables, rootName)) {
+      throw new Error(`Undefined data source: ${rootName}`);
+    }
+
+    var root = this.variables[rootName];
+
+    var node = this.find(root, path);
+
+    if (node === undefined) {
+      throw new Error(`Undefined reference: ${[rootName, ...path].join(".")}`);
+    }
+
+    // Plain strings are data. Keep legacy statement-based formulas, while
+    // { formula: ... } explicitly identifies arbitrary executable source.
+    if (typeof node === "string" && this.isLegacyFormula(node)) {
+      return (await this.evaluateFormulaAsync(key, node, rootName, path, env));
+    }
+
+    if (node && typeof node === "object" && typeof node.formula === "string") {
+      return (await this.evaluateFormulaAsync(key, node.formula, rootName, path, env));
+    }
+
+    this.cache.set(key, node);
+
+    return node;
+  }
+
+  async resolveLocalAsync(name: string, rootName: string, path: string[], env: Env) : Promise<any> {
+    var parentPath = path.slice(0, -1);
+
+    var root = this.variables[rootName];
+
+    var parent = this.find(root, parentPath);
+
+    if (parent === undefined || parent === null) {
+      throw new Error(`Undefined variable: ${name}`);
+    }
+
+    /*
+     * Normal object:
+     *
+     * {
+     *   A: formula,
+     *   B: formula
+     * }
+     */
+    if (typeof parent === "object" && !Array.isArray(parent)) {
+      if (Object.prototype.hasOwnProperty.call(parent, name)) {
+        return (await this.resolveAsync(rootName, [...parentPath, name], env));
+      }
+
+      /*
+       * RESULTS / columns object
+       *
+       * columns: {
+       *   A: formula,
+       *   B: formula
+       * }
+       */
+      if (
+        parent.columns &&
+        typeof parent.columns === "object" &&
+        !Array.isArray(parent.columns) &&
+        Object.prototype.hasOwnProperty.call(parent.columns, name)
+      ) {
+        return (await this.resolveAsync(rootName, [...parentPath, "columns", name], env));
+      }
+
+      /*
+       * children
+       */
+      if (
+        parent.children &&
+        Object.prototype.hasOwnProperty.call(parent.children, name)
+      ) {
+        return (await this.resolveAsync(rootName, [...parentPath, "children", name], env));
+      }
+    }
+
+    /*
+     * columns array
+     *
+     * columns: [
+     *   {
+     *     name: 'A',
+     *     formula: '...'
+     *   }
+     * ]
+     */
+    if (parent && Array.isArray(parent.columns)) {
+      var columnIndex = parent.columns.findIndex(function (item: any) {
+        return item && item.name === name;
+      });
+
+      if (columnIndex !== -1) {
+        return (await this.resolveAsync(
+          rootName,
+          [...parentPath, "columns", String(columnIndex)],
+          env,
+        ));
+      }
+    }
+
+    /*
+     * Current parent itself may be an array
+     *
+     * GROUP1: [
+     *   { name: 'A', formula: '...' },
+     *   { name: 'B', formula: '...' }
+     * ]
+     */
+    if (Array.isArray(parent)) {
+      var itemIndex = parent.findIndex(function (item: any) {
+        return item && typeof item === "object" && item.name === name;
+      });
+
+      if (itemIndex !== -1) {
+        return (await this.resolveAsync(rootName, [...parentPath, String(itemIndex)], env));
+      }
+    }
+
+    throw new Error(`Undefined variable: ${name}`);
+  }
+
+  async evaluateFormulaAsync(
+    key: string,
+    formula: string,
+    rootName: string,
+    path: string[],
+    env: Env,
+  ) : Promise<any> {
+    this.evaluating.push(key);
+
+    try {
+      var value = (await this.interpreter.evaluateFormulaAsync(
+        formula,
+        rootName,
+        path,
+        env,
+      ));
+
+      this.cache.set(key, value);
+
+      return value;
+    } catch (error) {
+      throw createInterpreterError(error, key, 1, formula);
+    } finally {
+      this.evaluating.pop();
+    }
+  }
 }

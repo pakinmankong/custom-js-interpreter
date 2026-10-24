@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import InterpreterService from "../lib/interpreter_service.js";
 import { createFunctions } from "../lib/functions.js";
 
+const asyncMode = process.argv.includes("--async");
 const transferAst = process.argv.includes("--ast-json");
 const exportedCaches: any[] = [];
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -13,6 +14,7 @@ const cases = [
   ...read("tests/basic_cases.json").map((v: any) => ({ ...v, group: "basic" })),
   ...read("dart/function_test_cases.json").map((v: any) => ({ ...v, group: "functions" })),
   ...read("tests/parity_cases.json").map((v: any) => ({ ...v, group: "extended" })),
+  ...(asyncMode ? read("tests/async_cases.json").map((v: any) => ({ ...v, group: "async" })) : []),
 ];
 function encode(value: any): any {
   if (value === undefined) return { $undefined: true };
@@ -23,7 +25,7 @@ function encode(value: any): any {
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k,v]) => [k,encode(v)]));
   return value;
 }
-function run(fixture: any) {
+async function run(fixture: any) {
   const calls: any[][] = [];
   let interpreter: InterpreterService;
   const functions = createFunctions({
@@ -40,11 +42,16 @@ function run(fixture: any) {
     HOST_ADD: (a: number,b: number) => a+b,
     HOST_APPLY: (fn: (x: number)=>any,value: number) => fn(value),
     HOST_IDENTITY: (fn: any) => fn,
+    DOUBLE: async (n: number) => n * 2,
+    COMPARE: async (a: number, b: number) => a - b,
+    FIND_ASYNC_STD: async (_id: number, value: number) => ({uncertainty: value * 2}),
+    FAIL: async () => { throw new Error('service failed'); },
   });
+  if (fixture.group === "async") Object.assign(functions, { FIND_STD_ERROR: (functions as any).FIND_ASYNC_STD });
   interpreter = new InterpreterService({ resolver: true,
     variables: {CURRENT_ROW:[1,0],_UNIT_:{1:{ID:1,SYMBOL:"m",NAME:"metre"}},...fixture.variables}, functions,
   });
-  try { return {status:"ok", value:encode(interpreter.execute(fixture.code)), calls:encode(calls)}; }
+  try { return {status:"ok", value:encode(asyncMode ? await interpreter.executeAsync(fixture.code) : interpreter.execute(fixture.code)), calls:encode(calls)}; }
   catch (error: any) { return {status:"error", error:String(error.message ?? error), calls:encode(calls)}; }
   finally { if (transferAst) exportedCaches.push(interpreter.exportAstCache()); }
 }
@@ -57,9 +64,10 @@ function equivalent(a: any, b: any, tolerance: number): boolean {
 }
 const originalLog=console.log;
 console.log=()=>{};
-const tsResults = cases.map(run);
+const tsResults = [];
+for (const fixture of cases) tsResults.push(await run(fixture));
 console.log=originalLog;
-const inputs = transferAst ? cases.map((fixture:any,i:number) => ({...fixture,astCache:exportedCaches[i]})) : cases;
+const inputs = cases.map((fixture:any,i:number) => ({...fixture, async: asyncMode, ...(transferAst ? {astCache:exportedCaches[i]} : {})}));
 const child=spawnSync("dart",[path.join(root,"dart/tool/parity_runner.dart")],{input:JSON.stringify(inputs),encoding:"utf8",maxBuffer:16*1024*1024});
 if(child.status!==0){process.stderr.write(child.stderr||child.stdout);process.exit(child.status??1);}
 const dart=JSON.parse(child.stdout);
@@ -77,5 +85,5 @@ for(let i=0;i<cases.length;i++){
   if(ok)passed++;else failures.push({group:fixture.group,name:fixture.name,code:fixture.code,ts,dart:other});
 }
 console.log=originalLog;
-console.log(JSON.stringify({mode:transferAst ? "ast-json" : "source",total:cases.length,passed,failed:failures.length,groups:Object.fromEntries(["basic","functions","extended"].map(group=>[group,cases.filter((c:any)=>c.group===group).length])),failures},null,2));
+console.log(JSON.stringify({async:asyncMode,mode:transferAst ? "ast-json" : "source",total:cases.length,passed,failed:failures.length,groups:Object.fromEntries(["basic","functions","extended","async"].map(group=>[group,cases.filter((c:any)=>c.group===group).length])),failures},null,2));
 if(failures.length)process.exitCode=1;

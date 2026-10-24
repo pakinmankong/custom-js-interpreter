@@ -276,3 +276,41 @@ LF, CRLF, CR และ Unicode line separators ใช้งานได้โด
 newline ไม่ได้แยก statement เสมอไป เช่น method chain, array access หรือ function
 call ที่ต่อจาก expression ก่อนหน้า และ `return` ที่ขึ้นบรรทัดใหม่ก่อน expression
 จะคืน undefined ส่วน separators ใน `for (init; test; update)` ยังต้องใส่
+
+## Async custom functions
+
+Use `await interpreter.executeAsync(code)` for custom functions returning a
+`Future`. Scripts keep their ordinary function calls; the evaluator waits before
+using each result. `execute()` remains synchronous.
+
+```dart
+late final InterpreterService interpreter;
+interpreter = InterpreterService(InterpreterContext(
+  variables: data,
+  functions: {
+    ...createFunctions(getEnv: () => interpreter.currentEnv),
+    'FIND_STD_ERROR': (dynamic standardId, dynamic lookupValue) async {
+      return await myService.findStdError(standardId, lookupValue);
+    },
+  },
+));
+final result = await interpreter.executeAsync('''
+  var row = FIND_STD_ERROR(standardId, lookupValue)
+  return row.uncertainty
+''');
+```
+
+Async evaluation supports statements, expressions, loops, interpreted functions,
+array callbacks, string `replace`, and `GOAL_SEEK`. Callbacks run sequentially.
+With `resolver: true`, formula dependencies also await custom functions.
+`executeCachedAsync()` runs a supplied AST bundle entry and honors strict cache
+mode, just like `executeCached()`; `executeAsync(code)` can use either imported
+AST or the local parser.
+
+For host callbacks invoked from a `NativeFunction`, use
+`await interpreter.callFunctionAsync(fn, args, receiver)`. Existing
+`createFunctions(services: ...)` providers remain synchronous; override a
+function as shown above to call asynchronous services.
+
+An instance permits one execution at a time. Wait for it to finish or use
+separate interpreter instances for concurrent requests.

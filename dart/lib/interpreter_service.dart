@@ -6,6 +6,7 @@ import 'parser.dart';
 import 'runtime.dart';
 import 'compiled_ast_bundle.dart';
 export 'runtime.dart' show undefined, JsUndefined, NativeFunction, jsString;
+part 'async_evaluator.dart';
 
 class InterpreterContext {
   final bool resolver;
@@ -76,6 +77,8 @@ class Reference {
 }
 
 class InterpreterService {
+  bool _asyncRunning = false;
+  late final _AsyncEvaluator _asyncEvaluator = _AsyncEvaluator(this);
   final InterpreterContext context;
   final Env globalEnv = Env();
   late Env currentEnv;
@@ -144,8 +147,16 @@ class InterpreterService {
       caseSensitive: false,
     );
     var lineStart = 0;
-    void push(String mode, [int depth = 0]) { modes.add(mode); depths.add(depth); }
-    void pop() { modes.removeLast(); depths.removeLast(); }
+    void push(String mode, [int depth = 0]) {
+      modes.add(mode);
+      depths.add(depth);
+    }
+
+    void pop() {
+      modes.removeLast();
+      depths.removeLast();
+    }
+
     for (var i = 0; i < source.length; i++) {
       final c = source[i], next = i + 1 < source.length ? source[i + 1] : '';
       if ('\r\n\u2028\u2029'.contains(c)) lineStart = i + 1;
@@ -155,25 +166,41 @@ class InterpreterService {
         continue;
       }
       if (mode == 'block') {
-        if (c == '*' && next == '/') { pop(); i++; }
+        if (c == '*' && next == '/') {
+          pop();
+          i++;
+        }
         continue;
       }
       if (mode != 'code') {
-        if (c == r'\') { i++; continue; }
-        if (c == mode) { pop(); continue; }
-        if (mode == '`' && c == r'$' && next == '{') { push('code', 1); i++; }
+        if (c == r'\') {
+          i++;
+          continue;
+        }
+        if (c == mode) {
+          pop();
+          continue;
+        }
+        if (mode == '`' && c == r'$' && next == '{') {
+          push('code', 1);
+          i++;
+        }
         continue;
       }
-      if (c == '#' && RegExp(r'^[\t ]*$').hasMatch(source.substring(lineStart, i))) {
+      if (c == '#' &&
+          RegExp(r'^[\t ]*$').hasMatch(source.substring(lineStart, i))) {
         final match = directive.firstMatch(source.substring(i));
         if (match != null) {
-          for (var j = i; j < i + match.end; j++) { chars[j] = ' '; }
+          for (var j = i; j < i + match.end; j++) {
+            chars[j] = ' ';
+          }
           i += match.end - 1;
           continue;
         }
       }
       if (c == '/' && (next == '/' || next == '*')) {
-        push(next == '/' ? 'line' : 'block'); i++;
+        push(next == '/' ? 'line' : 'block');
+        i++;
       } else if (c == '"' || c == "'" || c == '`') {
         push(c);
       } else if (depths.last > 0) {
@@ -208,6 +235,10 @@ class InterpreterService {
   }
 
   dynamic execute([String? code]) {
+    if (_asyncRunning)
+      throw JsError(
+        'An asynchronous execution is already running on this interpreter',
+      );
     userCode = code ?? userCode;
     lineOffset = 1;
     final ast = parse('function __USER_MAIN__() {\n$userCode\n}');
@@ -232,6 +263,67 @@ class InterpreterService {
       undefined,
     );
   }
+
+  Future<dynamic> executeAsync([String? code]) async {
+    if (_asyncRunning)
+      throw JsError(
+        'An asynchronous execution is already running on this interpreter',
+      );
+    _asyncRunning = true;
+    userCode = code ?? userCode;
+    lineOffset = 1;
+    try {
+      final ast = parse('function __USER_MAIN__() {\n$userCode\n}');
+      final node = ast['body'][0] as Node;
+      _asyncEvaluator.hoistFunctions(node['body']['body'], globalEnv);
+      return await _asyncEvaluator.callFunction(
+        _asyncEvaluator.createFunction(node, globalEnv),
+        [],
+        undefined,
+      );
+    } finally {
+      _asyncRunning = false;
+    }
+  }
+
+  Future<dynamic> executeCachedAsync([String? code]) async {
+    final bundle = context.astBundle;
+    if (bundle == null) throw JsError('No compiled AST bundle was provided');
+    if (code == null) {
+      if (bundle.codes.length != 1)
+        throw JsError(
+          'Specify code when the AST bundle does not contain exactly one main entry',
+        );
+      code = bundle.codes.single;
+    }
+    if (bundle.lookup('function __USER_MAIN__() {\n$code\n}') == null) {
+      throw JsError('AST cache miss: source was not included in the bundle');
+    }
+    return await executeAsync(code);
+  }
+
+  Future<dynamic> evaluateFormulaAsync(
+    String formula,
+    String rootName,
+    List<String> path,
+    Env env,
+  ) async {
+    final ast = parse('function __FORMULA__() {\n$formula\n}');
+    final formulaEnv = Env(env);
+    formulaEnv.define('__FORMULA_ROOT__', rootName);
+    formulaEnv.define('__FORMULA_PATH__', path);
+    return await _asyncEvaluator.callFunction(
+      _asyncEvaluator.createFunction(ast['body'][0], formulaEnv),
+      [],
+      undefined,
+    );
+  }
+
+  Future<dynamic> callFunctionAsync(
+    dynamic fn,
+    List<dynamic> args, [
+    dynamic thisValue = undefined,
+  ]) => _asyncEvaluator.callFunction(fn, args, thisValue);
 
   String getDataRootName(String name) => name == 'RECORDS' ? '_RECORDS_' : name;
   ({String root, List<String> path})? getDataReferencePath(Node node, Env env) {

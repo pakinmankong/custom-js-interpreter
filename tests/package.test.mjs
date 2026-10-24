@@ -58,3 +58,11 @@ test('compiled package can prepare portable JSON without evaluating code', () =>
   assert.equal(payload.version,1);
   assert.equal(payload.entries.length,2);
 });
+
+test('compiled package awaits custom async functions before evaluating dependent expressions', async () => {
+  const interpreter = new InterpreterService({functions:{
+    ...createFunctions(),
+    FIND_STD_ERROR: async (id, value) => { await Promise.resolve(); return {uncertainty:value*2}; },
+  }});
+  assert.equal(await interpreter.executeAsync('var row=FIND_STD_ERROR(1,5);return row.uncertainty+1;'),11);
+});

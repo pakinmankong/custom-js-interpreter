@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { parse } from '@babel/parser';
+fs.copyFileSync('tests/async_cases.json', 'dart/async_cases.json');
 const fixtures = JSON.parse(fs.readFileSync('tests/basic_cases.json', 'utf8'));
 fs.writeFileSync('dart/test_cases.json', JSON.stringify(fixtures, null, 2) + '\n');
 // Copy the example data and interpreted code without copying host JS functions.

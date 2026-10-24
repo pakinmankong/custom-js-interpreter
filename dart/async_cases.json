@@ -1,0 +1,199 @@
+[
+  {
+    "name": "async service object is ready before property access",
+    "code": "var row=FIND_STD_ERROR(1,5);return row.uncertainty;",
+    "expected": 10
+  },
+  {
+    "name": "async result in binary and unary expressions",
+    "code": "return [DOUBLE(3)+DOUBLE(4),-DOUBLE(2),!DOUBLE(0),DOUBLE(3)>5];",
+    "expected": [
+      14,
+      -4,
+      true,
+      true
+    ]
+  },
+  {
+    "name": "short circuit and conditional await only selected branches",
+    "code": "return [false&&FAIL(),true||FAIL(),null??DOUBLE(3),DOUBLE(1)?DOUBLE(4):FAIL()];",
+    "expected": [
+      false,
+      true,
+      6,
+      8
+    ]
+  },
+  {
+    "name": "if else awaits test and body",
+    "code": "if(DOUBLE(1)===2){return DOUBLE(3);}else{return FAIL();}",
+    "expected": 6
+  },
+  {
+    "name": "for loop awaits body update break and continue",
+    "code": "var total=0;for(var i=0;i<DOUBLE(4);i++){if(i===1){continue;}if(i===4){break;}total+=DOUBLE(i);}return total;",
+    "expected": 10
+  },
+  {
+    "name": "while and do while await tests and assignments",
+    "code": "var x=0;while(x<DOUBLE(2)){x+=DOUBLE(1);}do{x--;}while(x>DOUBLE(1));return x;",
+    "expected": 2
+  },
+  {
+    "name": "for of and for in await values and body",
+    "code": "var sum=0;for(const n of [DOUBLE(1),DOUBLE(2)]){sum+=n;}for(var key in {a:DOUBLE(3)}){sum+=DOUBLE(1);}return sum;",
+    "expected": 8
+  },
+  {
+    "name": "nested functions closures default rest and explicit returns",
+    "code": "function f(a=DOUBLE(2),...rest){return ()=>DOUBLE(a+rest[0]);}return f(void 0,3)();",
+    "expected": 14
+  },
+  {
+    "name": "array map awaits every callback and captures index",
+    "code": "return [1,2,3].map((n,i)=>DOUBLE(n)+i);",
+    "expected": [
+      2,
+      5,
+      8
+    ]
+  },
+  {
+    "name": "array filter some every find and findIndex await predicates",
+    "code": "const a=[1,2,3];return [a.filter(n=>DOUBLE(n)>2),a.some(n=>DOUBLE(n)===4),a.every(n=>DOUBLE(n)>0),a.find(n=>DOUBLE(n)>2),a.findIndex(n=>DOUBLE(n)>2)];",
+    "expected": [
+      [
+        2,
+        3
+      ],
+      true,
+      true,
+      2,
+      1
+    ]
+  },
+  {
+    "name": "array reduce awaits accumulator and callback",
+    "code": "return [1,2,3].reduce((sum,n)=>sum+DOUBLE(n),0);",
+    "expected": 12
+  },
+  {
+    "name": "array sort awaits comparator",
+    "code": "return [3,1,2].sort((a,b)=>COMPARE(a,b));",
+    "expected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "name": "forEach awaits side effects in order",
+    "code": "var sum=0;[1,2,3].forEach(n=>{sum+=DOUBLE(n);});return sum;",
+    "expected": 12
+  },
+  {
+    "name": "computed member assignments and object spread await inputs",
+    "code": "var obj={...{x:DOUBLE(1)},[\"y\"]:DOUBLE(2)};obj[\"x\"]+=DOUBLE(3);return obj; ",
+    "expected": {
+      "x": 8,
+      "y": 4
+    }
+  },
+  {
+    "name": "array spread call spread and nested arrays await inputs",
+    "code": "function sum(a,b){return a+b;}return [sum(...[DOUBLE(1),DOUBLE(2)]),...[DOUBLE(3)]];",
+    "expected": [
+      6,
+      6
+    ]
+  },
+  {
+    "name": "templates await expressions and nested templates",
+    "code": "return `n=${DOUBLE(2)}:${`v=${DOUBLE(3)}`}`;",
+    "expected": "n=4:v=6"
+  },
+  {
+    "name": "custom native function awaits interpreted callback",
+    "code": "return HOST_APPLY(value=>DOUBLE(value),5);",
+    "expected": 10
+  },
+  {
+    "name": "no return yields undefined after async expression",
+    "code": "DOUBLE(5);",
+    "expected": {
+      "$undefined": true
+    }
+  },
+  {
+    "name": "block arrow without return yields undefined",
+    "code": "return (()=>{DOUBLE(5);})();",
+    "expected": {
+      "$undefined": true
+    }
+  },
+  {
+    "name": "bare return yields undefined",
+    "code": "DOUBLE(1);return;",
+    "expected": {
+      "$undefined": true
+    }
+  },
+  {
+    "name": "ignored row metadata does not change async execution",
+    "code": "#CURRENT_ROW=0\nvar x=DOUBLE(3);\n#CURRENT_ROW=0,0\nreturn x;",
+    "expected": 6
+  },
+  {
+    "name": "sequence expressions await each operation",
+    "code": "var x=0;return (x=DOUBLE(2),DOUBLE(x));",
+    "expected": 8
+  },
+  {
+    "name": "async calls in host output preserve statement order",
+    "code": "print(DOUBLE(1));print(DOUBLE(2));return DOUBLE(3);",
+    "expected": 6,
+    "calls": [
+      [
+        2
+      ],
+      [
+        4
+      ]
+    ]
+  },
+  {
+    "name": "async rejection propagates",
+    "code": "var n=DOUBLE(1);\nFAIL();\nreturn 9;",
+    "error": "service failed",
+    "line": 2
+  },
+  {
+    "name": "string replacement awaits callback results",
+    "code": "return \"a1b2\".replace(/([0-9])/g,(match,n)=>DOUBLE(NUMBER(n)));",
+    "expected": "a2b4"
+  },
+  {
+    "name": "goal seek awaits interpreted callback and custom service",
+    "code": "return ROUND(GOAL_SEEK(x=>DOUBLE(x),10),3);",
+    "expected": 5
+  },
+  {
+    "name": "array callback rejection propagates",
+    "code": "var values=[1,2];\nreturn values.map(n=>FAIL());",
+    "error": "service failed",
+    "line": 2
+  },
+  {
+    "name": "reduceRight awaits callbacks in reverse order",
+    "code": "return [[1,2,3].reduceRight((a,n)=>a-DOUBLE(n),20),[1,2,3].reduceRight((a,n)=>a-DOUBLE(n))];",
+    "expected": [
+      8,
+      -3
+    ]
+  },
+  {
+    "name": "overridden array methods take precedence over async builtins",
+    "code": "var a=[1,2];a.map=()=>DOUBLE(9);return a.map();",
+    "expected": 18
+  }
+]

@@ -292,3 +292,50 @@ async/await และ try/catch
 สำหรับผู้พัฒนาที่มี Dart SDK รันเทียบทั้งสองฝั่งด้วย `npm run test:parity`
 
 License: ISC
+
+## Async custom functions
+
+ใช้ `await interpreter.executeAsync(code)` เมื่อต้องเรียก custom function ที่คืน
+Promise เช่น query database หรือเรียก service โดย interpreter จะรอผลตามลำดับ
+ก่อนประเมิน expression และ statement ถัดไป โค้ดที่ส่งเข้าไปเขียนเหมือนเดิม
+ไม่ต้องใส่ `await` ใน script:
+
+```ts
+import { InterpreterService, createFunctions } from 'custom-js-interpreter';
+
+const interpreter: InterpreterService = new InterpreterService({
+  variables: data,
+  functions: {
+    ...createFunctions({ getEnv: () => interpreter.currentEnv }),
+    FIND_STD_ERROR: async (standardId, lookupValue) => {
+      return await myService.findStdError(standardId, lookupValue);
+    },
+  },
+});
+
+try {
+  const result = await interpreter.executeAsync(`
+    var row = FIND_STD_ERROR(standardId, lookupValue)
+    return row.uncertainty
+  `);
+} catch (error) {
+  console.error(formatInterpreterError(createInterpreterError(
+    error, 'script', interpreter.lineOffset, interpreter.userCode,
+  )));
+}
+```
+
+Async mode รอผลใน loop, condition, function, template และ callback ของ array
+(`map`, `filter`, `forEach`, `reduce`, `sort`, `some`, `every`, `find`, `findIndex`)
+รวมถึง string `replace` และ `GOAL_SEEK` โดย callback ของ array ทำงานตามลำดับ
+หากเปิด `resolver: true` จะรอ formula dependencies ด้วย และใช้ AST cache เดิมได้
+
+`execute()` ยังเป็น synchronous ตามเดิม ให้ใช้ `executeAsync()` สำหรับ async
+custom functions โดยตรง ส่วน providers ใน `createFunctions({ services: ... })`
+ยังเป็น synchronous ให้ override ฟังก์ชันที่ต้องเรียก async service ตามตัวอย่าง
+Custom host functions ที่เรียก callback จาก script ต้องรอ callback นั้นด้วย
+หากถือ interpreter function โดยตรง ใช้ `await interpreter.callFunctionAsync(fn, args)`
+
+ใช้ interpreter หนึ่ง instance สำหรับหนึ่ง execution ในแต่ละขณะ
+การเรียก `execute()` หรือ `executeAsync()` ซ้อนระหว่างที่ async execution ยังไม่จบ
+จะแจ้ง error ให้แยก instance หากต้องการรันพร้อมกัน

@@ -9,6 +9,8 @@
     "test": "tsx --test testing.ts",
     "test:package": "npm run build && node --test tests/package.test.mjs",
     "test:parity": "tsx tools/check_parity.ts",
+    "test:parity:async": "tsx tools/check_parity.ts --async",
+    "test:ast-json:async": "tsx tools/check_parity.ts --async --ast-json",
     "example": "tsx index.ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm run typecheck && npm test && npm run test:package",

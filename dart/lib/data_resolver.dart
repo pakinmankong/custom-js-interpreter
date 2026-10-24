@@ -135,4 +135,110 @@ class DataResolver {
     }
     return current;
   }
+
+  Future<dynamic> resolveAsync(
+    String rootName,
+    List<String> path,
+    Env env,
+  ) async {
+    final key = [rootName, ...path].join('.');
+    if (cache.containsKey(key)) return cache[key];
+    if (evaluating.contains(key)) {
+      final cycle = [
+        ...evaluating.skip(evaluating.indexOf(key)),
+        key,
+      ].join(' -> ');
+      throw JsError('Circular dependency: $cycle');
+    }
+    if (!variables.containsKey(rootName))
+      throw JsError('Undefined data source: $rootName');
+    final node = find(variables[rootName], path);
+    if (identical(node, undefined)) throw JsError('Undefined reference: $key');
+    if (node is String && _isLegacyFormula(node)) {
+      return (await evaluateFormulaAsync(key, node, rootName, path, env));
+    }
+    if (node is Map && node['formula'] is String)
+      return (await evaluateFormulaAsync(
+        key,
+        node['formula'],
+        rootName,
+        path,
+        env,
+      ));
+    cache[key] = node;
+    return node;
+  }
+
+  Future<dynamic> resolveLocalAsync(
+    String name,
+    String rootName,
+    List<String> path,
+    Env env,
+  ) async {
+    final parentPath = path.isEmpty
+        ? <String>[]
+        : path.sublist(0, path.length - 1);
+    final parent = find(variables[rootName], parentPath);
+    if (parent is Map) {
+      if (parent.containsKey(name))
+        return (await resolveAsync(rootName, [...parentPath, name], env));
+      final columns = parent['columns'];
+      if (columns is Map && columns.containsKey(name))
+        return (await resolveAsync(rootName, [
+          ...parentPath,
+          'columns',
+          name,
+        ], env));
+      final children = parent['children'];
+      if (children is Map && children.containsKey(name))
+        return (await resolveAsync(rootName, [
+          ...parentPath,
+          'children',
+          name,
+        ], env));
+      if (columns is List) {
+        final index = columns.indexWhere(
+          (item) => item is Map && item['name'] == name,
+        );
+        if (index != -1)
+          return (await resolveAsync(rootName, [
+            ...parentPath,
+            'columns',
+            '$index',
+          ], env));
+      }
+    }
+    if (parent is List) {
+      final index = parent.indexWhere(
+        (item) => item is Map && item['name'] == name,
+      );
+      if (index != -1)
+        return (await resolveAsync(rootName, [...parentPath, '$index'], env));
+    }
+    throw JsError('Undefined variable: $name');
+  }
+
+  Future<dynamic> evaluateFormulaAsync(
+    String key,
+    String formula,
+    String rootName,
+    List<String> path,
+    Env env,
+  ) async {
+    evaluating.add(key);
+    try {
+      final value = (await interpreter.evaluateFormulaAsync(
+        formula,
+        rootName,
+        path,
+        env,
+      ));
+      cache[key] = value;
+      return value;
+    } catch (error) {
+      throw createInterpreterError(error, key, 1, formula);
+    } finally {
+      evaluating.removeLast();
+    }
+  }
 }

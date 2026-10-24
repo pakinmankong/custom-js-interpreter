@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'function_testing.dart';
 import 'ast_cache_testing.dart';
+import 'async_testing.dart';
 import 'lib/custom_js_interpreter.dart';
 import 'lib/builtins.dart';
 
@@ -26,7 +27,7 @@ dynamic decode(dynamic value) {
   return value;
 }
 
-void main() {
+Future<void> main() async {
   var passed = 0, failed = 0;
   void test(String name, void Function() body) {
     try {
@@ -75,19 +76,38 @@ void main() {
     });
   }
   test('resolver defaults to false and requires explicit opt-in', () {
-    final variables = {'DATA': {'value': 'return 5', 'cell': {'formula': 'return 6'}, 'unit': 'uuid-text'}};
-    for (final context in [InterpreterContext(variables: variables), InterpreterContext(variables: variables, resolver: false)]) {
+    final variables = {
+      'DATA': {
+        'value': 'return 5',
+        'cell': {'formula': 'return 6'},
+        'unit': 'uuid-text',
+      },
+    };
+    for (final context in [
+      InterpreterContext(variables: variables),
+      InterpreterContext(variables: variables, resolver: false),
+    ]) {
       final interpreter = InterpreterService(context);
-      expect(interpreter.execute('return [DATA.value,DATA.cell.formula,DATA.unit];'), ['return 5', 'return 6', 'uuid-text']);
+      expect(
+        interpreter.execute('return [DATA.value,DATA.cell.formula,DATA.unit];'),
+        ['return 5', 'return 6', 'uuid-text'],
+      );
       expect(interpreter.dataResolver.cache.length, 0);
     }
-    final interpreter = InterpreterService(InterpreterContext(variables: variables, resolver: true));
-    expect(interpreter.execute('return [DATA.value,DATA.cell,DATA.unit];'), [5, 6, 'uuid-text']);
+    final interpreter = InterpreterService(
+      InterpreterContext(variables: variables, resolver: true),
+    );
+    expect(interpreter.execute('return [DATA.value,DATA.cell,DATA.unit];'), [
+      5,
+      6,
+      'uuid-text',
+    ]);
   });
   test('print arguments, expressions, loop and nested function', () {
     final calls = <List<dynamic>>[];
     final interpreter = InterpreterService(
-      InterpreterContext(resolver: true, 
+      InterpreterContext(
+        resolver: true,
         functions: {
           'print': NativeFunction((args, receiver) {
             calls.add(List.of(args));
@@ -117,7 +137,8 @@ void main() {
   });
   test('data formulas, named arrays, columns, children and RECORDS alias', () {
     final interpreter = InterpreterService(
-      InterpreterContext(resolver: true, 
+      InterpreterContext(
+        resolver: true,
         variables: {
           '_RECORDS_': {
             'group': {
@@ -141,7 +162,8 @@ void main() {
   });
   test('circular dependency and evaluating stack cleanup', () {
     final interpreter = InterpreterService(
-      InterpreterContext(resolver: true, 
+      InterpreterContext(
+        resolver: true,
         variables: {
           'DATA': {'A': 'return B', 'B': 'return A'},
         },
@@ -182,33 +204,51 @@ void main() {
         throw StateError('Missing error message');
     }
   });
-  test('external error formatting preserves metadata lines and newline types', () {
-    for (final newline in ['\n', '\r\n', '\r', '\u2028', '\u2029']) {
-      final code = '#CURRENT_ROW=0,1${newline}sdfds';
-      final interpreter = InterpreterService();
-      Object? caught;
-      try {
-        interpreter.execute(code);
-      } catch (error) {
-        caught = error;
+  test(
+    'external error formatting preserves metadata lines and newline types',
+    () {
+      for (final newline in ['\n', '\r\n', '\r', '\u2028', '\u2029']) {
+        final code = '#CURRENT_ROW=0,1${newline}sdfds';
+        final interpreter = InterpreterService();
+        Object? caught;
+        try {
+          interpreter.execute(code);
+        } catch (error) {
+          caught = error;
+        }
+        if (caught == null)
+          throw StateError('Expected undefined variable error');
+        final error = createInterpreterError(
+          caught,
+          'script',
+          interpreter.lineOffset,
+          code,
+        );
+        expect(error.line, 2);
+        expect(error.column, 0);
+        if (!formatInterpreterError(error).contains('> 2 | sdfds')) {
+          throw StateError('Incorrect source line in formatted error');
+        }
+        if (!identical(createInterpreterError(error, 'script', 1), error)) {
+          throw StateError(
+            'InterpreterError should not have its offset subtracted twice',
+          );
+        }
       }
-      if (caught == null) throw StateError('Expected undefined variable error');
-      final error = createInterpreterError(caught, 'script', interpreter.lineOffset, code);
-      expect(error.line, 2);
-      expect(error.column, 0);
-      if (!formatInterpreterError(error).contains('> 2 | sdfds')) {
-        throw StateError('Incorrect source line in formatted error');
-      }
-      if (!identical(createInterpreterError(error, 'script', 1), error)) {
-        throw StateError('InterpreterError should not have its offset subtracted twice');
-      }
-    }
-  });
+    },
+  );
   test('nested formula error formatting retains original source', () {
     const formula = 'return 123invalid';
-    final interpreter = InterpreterService(InterpreterContext(resolver: true, 
-      variables: {'DATA': {'field': {'formula': formula}}},
-    ));
+    final interpreter = InterpreterService(
+      InterpreterContext(
+        resolver: true,
+        variables: {
+          'DATA': {
+            'field': {'formula': formula},
+          },
+        },
+      ),
+    );
     Object? caught;
     try {
       interpreter.execute('return DATA.field;');
@@ -216,7 +256,12 @@ void main() {
       caught = error;
     }
     if (caught == null) throw StateError('Expected formula error');
-    final error = createInterpreterError(caught, 'script', 1, 'return DATA.field;');
+    final error = createInterpreterError(
+      caught,
+      'script',
+      1,
+      'return DATA.field;',
+    );
     expect(error.source, 'DATA.field');
     expect(error.sourceCode, formula);
     expect(error.line, 1);
@@ -225,19 +270,47 @@ void main() {
     }
     expect(interpreter.dataResolver.evaluating.length, 0);
   });
-  test('data strings remain literal while legacy and explicit formulas execute', () {
-    const id = 'bd4d74c0-275e-45b5-928b-68fa4f30a505';
-    final interpreter = InterpreterService(InterpreterContext(resolver: true, variables: {
-      '_UUC_DETAIL_': {'unit': id, 'resolution': '0.1', 'make': 'Magnetic Flowmeter', 'empty': '', 'numericText': '123invalid'},
-      'DATA': {'A': 'return 5;', 'B': '// comment\n#CURRENT_ROW=0\nreturn A+1;', 'C': {'formula': 'return 7;'}, 'bad': {'formula': '123invalid'}},
-    }));
-    expect(interpreter.execute('return [_UUC_DETAIL_["unit"],_UUC_DETAIL_.resolution,_UUC_DETAIL_.make,_UUC_DETAIL_.empty,_UUC_DETAIL_.numericText,DATA.A,DATA.B,DATA.C];'), [id, '0.1', 'Magnetic Flowmeter', '', '123invalid', 5, 6, 7]);
-    Object? caught;
-    try { interpreter.execute('return DATA.bad;'); } catch (error) { caught = error; }
-    if (caught is! InterpreterError || caught.source != 'DATA.bad') {
-      throw StateError('Expected explicit invalid formula to throw');
-    }
-  });
+  test(
+    'data strings remain literal while legacy and explicit formulas execute',
+    () {
+      const id = 'bd4d74c0-275e-45b5-928b-68fa4f30a505';
+      final interpreter = InterpreterService(
+        InterpreterContext(
+          resolver: true,
+          variables: {
+            '_UUC_DETAIL_': {
+              'unit': id,
+              'resolution': '0.1',
+              'make': 'Magnetic Flowmeter',
+              'empty': '',
+              'numericText': '123invalid',
+            },
+            'DATA': {
+              'A': 'return 5;',
+              'B': '// comment\n#CURRENT_ROW=0\nreturn A+1;',
+              'C': {'formula': 'return 7;'},
+              'bad': {'formula': '123invalid'},
+            },
+          },
+        ),
+      );
+      expect(
+        interpreter.execute(
+          'return [_UUC_DETAIL_["unit"],_UUC_DETAIL_.resolution,_UUC_DETAIL_.make,_UUC_DETAIL_.empty,_UUC_DETAIL_.numericText,DATA.A,DATA.B,DATA.C];',
+        ),
+        [id, '0.1', 'Magnetic Flowmeter', '', '123invalid', 5, 6, 7],
+      );
+      Object? caught;
+      try {
+        interpreter.execute('return DATA.bad;');
+      } catch (error) {
+        caught = error;
+      }
+      if (caught is! InterpreterError || caught.source != 'DATA.bad') {
+        throw StateError('Expected explicit invalid formula to throw');
+      }
+    },
+  );
   test('example math functions ported from index.ts', () {
     final interpreter = InterpreterService(
       InterpreterContext(resolver: true, functions: createExampleFunctions()),
@@ -295,6 +368,16 @@ void main() {
   });
   runFunctionTests(test, expect);
   runAstCacheTests(test, expect);
+  await runAsyncTests((name, body) async {
+    try {
+      await body();
+      passed++;
+      stdout.writeln('PASS $name');
+    } catch (error, stack) {
+      failed++;
+      stderr.writeln('FAIL $name\n$error\n$stack');
+    }
+  }, expect);
   stdout.writeln('$passed passed, $failed failed');
   if (failed > 0) exitCode = 1;
 }

@@ -1,3 +1,4 @@
+import { asyncNative } from './async_native.js';
 import type Env from "./env.js";
 import { createRequire } from "node:module";
 
@@ -607,7 +608,7 @@ export function createFunctions(options: FunctionsOptions = {}) {
         : Math.trunc(n * factor)) / factor
     );
   }
-  return {
+  const functions = {
     ...base,
     print: options.output ?? base.print,
     SUCCESS: (value: any = null, message?: any) => ({
@@ -926,4 +927,59 @@ export function createFunctions(options: FunctionsOptions = {}) {
       throw new Error("Goal Seek: did not converge within maxIterations");
     },
   };
+  Object.assign(functions.GOAL_SEEK, { [asyncNative]: async (
+      fn: (x: number) => number,
+      target: any,
+      tolerance = 1e-6,
+      maxIterations = 100,
+    ) => {
+      if (typeof fn !== "function")
+        throw new Error("GOAL_SEEK() <function> must be a function");
+      const goal = numeric(target, "GOAL_SEEK", "target");
+      const tol = numeric(tolerance, "GOAL_SEEK", "tolerance");
+      const iterations = integer(maxIterations, "GOAL_SEEK", "maxIterations");
+      if (tol <= 0 || iterations <= 0)
+        throw new Error(
+          "GOAL_SEEK() tolerance and maxIterations must be positive",
+        );
+      const evaluate = async (x: number) =>
+        numeric(await fn(x), "GOAL_SEEK", "callback result") -
+        goal;
+      const f0 = (await evaluate(0));
+      if (Math.abs(f0) <= tol) return 0;
+      let low = 0,
+        high = 0,
+        found = false,
+        step = 1;
+      for (let i = 0; i < iterations; i++) {
+        if (Math.sign((await evaluate(-step))) !== Math.sign(f0)) {
+          low = -step;
+          high = 0;
+          found = true;
+          break;
+        }
+        if (Math.sign((await evaluate(step))) !== Math.sign(f0)) {
+          low = 0;
+          high = step;
+          found = true;
+          break;
+        }
+        step *= 2;
+      }
+      if (!found) throw new Error("Goal Seek: target could not be found");
+      let fLow = (await evaluate(low));
+      for (let i = 0; i < iterations; i++) {
+        const mid = (low + high) / 2,
+          fMid = (await evaluate(mid));
+        if (Math.abs(fMid) <= tol) return mid;
+        if (Math.sign(fLow) !== Math.sign(fMid)) high = mid;
+        else {
+          low = mid;
+          fLow = fMid;
+        }
+      }
+      throw new Error("Goal Seek: did not converge within maxIterations");
+    } });
+  return functions;
+
 }

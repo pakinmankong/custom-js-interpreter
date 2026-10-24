@@ -2,6 +2,7 @@ import parser from "@babel/parser";
 import Env from "./env.js";
 import DataResolver from "./data_resolver.js";
 import { AstCache } from "./ast_cache.js";
+import AsyncEvaluator from "./async_evaluator.js";
 
 export interface InterpreterContext {
   /** Enable lazy formula resolution. Default: false (plain variable access). */
@@ -14,6 +15,8 @@ export interface InterpreterContext {
 }
 
 export default class InterpreterService {
+  private asyncRunning = false;
+  private readonly asyncEvaluator = new AsyncEvaluator(this);
   context: InterpreterContext;
 
   globalEnv: Env;
@@ -170,6 +173,7 @@ export default class InterpreterService {
   }
 
   execute(code: string = this.userCode) {
+    if (this.asyncRunning) throw new Error("An asynchronous execution is already running on this interpreter");
     this.userCode = code;
 
     this.lineOffset = 1;
@@ -205,6 +209,37 @@ export default class InterpreterService {
     var fn = this.createFunction(functionNode, formulaEnv);
 
     return this.callFunction(fn, [], undefined);
+  }
+
+  /** Await host functions and interpreted callbacks in statement order. */
+  async executeAsync(code: string = this.userCode): Promise<any> {
+    if (this.asyncRunning) throw new Error("An asynchronous execution is already running on this interpreter");
+    this.asyncRunning = true;
+    this.userCode = code;
+    this.lineOffset = 1;
+    try {
+      const node: any = this.compile(code).program.body[0];
+      this.asyncEvaluator.hoistFunctionsAsync(node.body.body, this.globalEnv);
+      return await this.asyncEvaluator.callFunctionAsync(
+        this.asyncEvaluator.createFunctionAsync(node, this.globalEnv), [], undefined,
+      );
+    } finally {
+      this.asyncRunning = false;
+    }
+  }
+
+  async evaluateFormulaAsync(formula: string, rootName: string, path: string[], env: Env): Promise<any> {
+    const node = this.compileFormula(formula).program.body[0];
+    const formulaEnv = new Env(env);
+    formulaEnv.define("__FORMULA_ROOT__", rootName);
+    formulaEnv.define("__FORMULA_PATH__", path);
+    return await this.asyncEvaluator.callFunctionAsync(
+      this.asyncEvaluator.createFunctionAsync(node, formulaEnv), [], undefined,
+    );
+  }
+
+  callFunctionAsync(fn: any, args: any[], thisValue?: any): Promise<any> {
+    return this.asyncEvaluator.callFunctionAsync(fn, args, thisValue);
   }
 
   getDataRootName(name: string) {

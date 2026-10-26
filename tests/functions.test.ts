@@ -203,3 +203,18 @@ test("existing numeric functions still work and print is injectable", () => {
   const random = execute(`return RAND();`);
   assert.ok(random>=0 && random<1);
 });
+
+
+test("required arguments reject undefined but allow null empty strings and zero", () => {
+  const received: any[][] = [];
+  const {execute} = setup({}, {convertUnit: (from, to, value) => {
+    received.push([from, to, value]); return value;
+  }});
+  assert.throws(() => execute('return UNIT_CONVERT();'), /<from_unit_id> is required/);
+  assert.throws(() => execute('return UNIT_CONVERT(1);'), /<to_unit_id> is required/);
+  assert.throws(() => execute('return UNIT_CONVERT(1,null);'), /<from_value> is required/);
+  assert.equal(execute('return UNIT_CONVERT(null,"",0);'), 0);
+  assert.equal(execute('return UNIT_CONVERT("",null,null);'), 0);
+  assert.equal(execute('return UNIT_CONVERT(1,2,"");'), 0);
+  assert.deepEqual(received, [[null,"",0],["",null,0],[1,2,0]]);
+});

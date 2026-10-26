@@ -185,6 +185,30 @@ return text;'''), 'outer inner\n#CURRENT_ROW=9,9\nend');
       expect(InterpreterService().execute('$metadata\nreturn 42;'), 42);
     }
   });
+  test('required arguments reject undefined but accept null empty strings and zero', () {
+    final received = <List<dynamic>>[];
+    final interpreter = InterpreterService(InterpreterContext(functions: createFunctions(
+      services: FunctionServices(convertUnit: (from, to, value) {
+        received.add([from, to, value]); return value;
+      }),
+    )));
+    final cases = {
+      'UNIT_CONVERT()': '<from_unit_id> is required',
+      'UNIT_CONVERT(1)': '<to_unit_id> is required',
+      'UNIT_CONVERT(1,null)': '<from_value> is required',
+    };
+    for (final entry in cases.entries) {
+      Object? caught;
+      try { interpreter.execute('return ${entry.key};'); } catch (error) { caught = error; }
+      if (caught == null || !caught.toString().contains(entry.value)) {
+        throw StateError('Expected ${entry.value}, got $caught');
+      }
+    }
+    expect(interpreter.execute('return UNIT_CONVERT(null,"",0);'), 0);
+    expect(interpreter.execute('return UNIT_CONVERT("",null,null);'), 0);
+    expect(interpreter.execute('return UNIT_CONVERT(1,2,"");'), 0);
+    expect(received, [[null, '', 0], ['', null, 0], [1, 2, 0]]);
+  });
   test('GOAL_SEEK block callback, closure and return signal', () {
     final interpreter = InterpreterService(
       InterpreterContext(functions: createFunctions()),

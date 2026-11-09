@@ -252,6 +252,11 @@
     "expected": 1.3
   },
   {
+    "name": "MROUND",
+    "code": "return MROUND(10,3);",
+    "expected": 9
+  },
+  {
     "name": "ROUNDUP",
     "code": "return ROUNDUP(-1.231,2);",
     "expected": -1.24
@@ -307,6 +312,101 @@
     "expected": {
       "$undefined": true
     }
+  },
+  {
+    "name": "MROUND negative values",
+    "code": "return MROUND(-10,-3);",
+    "expected": -9
+  },
+  {
+    "name": "MROUND positive midpoint",
+    "code": "return MROUND(5,2);",
+    "expected": 6
+  },
+  {
+    "name": "MROUND negative midpoint",
+    "code": "return MROUND(-5,-2);",
+    "expected": -6
+  },
+  {
+    "name": "MROUND fractional multiple",
+    "code": "return MROUND(1.3,0.2);",
+    "expected": 1.4
+  },
+  {
+    "name": "MROUND below midpoint",
+    "code": "return MROUND(1.29,0.2);",
+    "expected": 1.2
+  },
+  {
+    "name": "MROUND above midpoint",
+    "code": "return MROUND(1.31,0.2);",
+    "expected": 1.4
+  },
+  {
+    "name": "MROUND stable decimal midpoint",
+    "code": "return MROUND(6.05,0.1);",
+    "expected": 6.1
+  },
+  {
+    "name": "MROUND negative decimal midpoint",
+    "code": "return MROUND(-7.05,-0.1);",
+    "expected": -7.1
+  },
+  {
+    "name": "MROUND decimal result",
+    "code": "return MROUND(0.28,0.1);",
+    "expected": 0.3
+  },
+  {
+    "name": "MROUND zero multiple",
+    "code": "return MROUND(-10,0);",
+    "expected": 0
+  },
+  {
+    "name": "MROUND zero number",
+    "code": "return MROUND(0,-3);",
+    "expected": 0
+  },
+  {
+    "name": "MROUND rounds to zero",
+    "code": "return MROUND(-1,-3);",
+    "expected": 0
+  },
+  {
+    "name": "MROUND exact multiple",
+    "code": "return MROUND(15,5);",
+    "expected": 15
+  },
+  {
+    "name": "MROUND numeric strings",
+    "code": "return MROUND(\"10\",\"3\");",
+    "expected": 9
+  },
+  {
+    "name": "MROUND null number",
+    "code": "return MROUND(null,3);",
+    "expected": 0
+  },
+  {
+    "name": "MROUND empty multiple",
+    "code": "return MROUND(10,\"\");",
+    "expected": 0
+  },
+  {
+    "name": "MROUND small values",
+    "code": "return MROUND(1.3e-20,2e-21);",
+    "expected": 1.4e-20
+  },
+  {
+    "name": "MROUND large values",
+    "code": "return MROUND(1.3e20,2e19);",
+    "expected": 140000000000000000000
+  },
+  {
+    "name": "MROUND extreme quotient",
+    "code": "return MROUND(1,5e-324);",
+    "expected": 1
   },
   {
     "name": "SUCCESS defaults",
@@ -601,6 +701,51 @@
     "name": "GOAL_SEEK zero target",
     "code": "return GOAL_SEEK(x=>x,0);",
     "expected": 0
+  },
+  {
+    "name": "MROUND missing number",
+    "code": "return MROUND();",
+    "error": "<number> is required"
+  },
+  {
+    "name": "MROUND missing multiple",
+    "code": "return MROUND(10);",
+    "error": "<multiple> is required"
+  },
+  {
+    "name": "MROUND different signs",
+    "code": "return MROUND(5,-2);",
+    "error": "#NUM!.*same sign"
+  },
+  {
+    "name": "MROUND reversed signs",
+    "code": "return MROUND(-5,2);",
+    "error": "#NUM!.*same sign"
+  },
+  {
+    "name": "MROUND invalid number",
+    "code": "return MROUND(\"bad\",2);",
+    "error": "<number>.*finite number"
+  },
+  {
+    "name": "MROUND invalid multiple",
+    "code": "return MROUND(2,\"bad\");",
+    "error": "<multiple>.*finite number"
+  },
+  {
+    "name": "MROUND infinite number",
+    "code": "return MROUND(1e999,2);",
+    "error": "<number>.*finite number"
+  },
+  {
+    "name": "MROUND infinite multiple",
+    "code": "return MROUND(2,1e999);",
+    "error": "<multiple>.*finite number"
+  },
+  {
+    "name": "MROUND overflow result",
+    "code": "return MROUND(1.7e308,1e308);",
+    "error": "#NUM!.*out of range"
   },
   {
     "name": "FIRST",

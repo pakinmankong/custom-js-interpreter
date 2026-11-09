@@ -18,8 +18,8 @@ function near(actual: number, expected: number, tolerance = 1e-7) {
   assert.ok(Math.abs(actual - expected) < tolerance, `Expected ${expected}, received ${actual}`);
 }
 
-test("register all 51 reference functions with direct parameters", () => {
-  const names = "SUCCESS ERROR FIRST LAST COUNT NUMBER IS_INFINITY FIND_INDEX EXP FIND_REF_SETTING SUMSQ SORTING FIND_STD_ERROR GET_STD_BY_INDEX GET_STD_BY_VALUE UNIT UNIT_ID TREND RAND RANDBETWEEN UNIT_CONVERT MIN MAX MAP SUM AVERAGE STDEV ABS SQRT GET_CURRENT_ROW_INDEX POWER LOG FIXED DECIMAL_PLACES STR NUM ROW EMPTY MATCH INDEX ISNULL FORMAT_EXPO TINV ROUND ROUNDUP ROUNDDOWN INT MMULT MINVERSE SIG GOAL_SEEK".split(" ");
+test("register all 52 reference functions with direct parameters", () => {
+  const names = "SUCCESS ERROR FIRST LAST COUNT NUMBER IS_INFINITY FIND_INDEX EXP FIND_REF_SETTING SUMSQ SORTING FIND_STD_ERROR GET_STD_BY_INDEX GET_STD_BY_VALUE UNIT UNIT_ID TREND RAND RANDBETWEEN UNIT_CONVERT MIN MAX MAP SUM AVERAGE STDEV ABS SQRT GET_CURRENT_ROW_INDEX POWER LOG FIXED DECIMAL_PLACES STR NUM ROW EMPTY MATCH INDEX ISNULL FORMAT_EXPO TINV ROUND MROUND ROUNDUP ROUNDDOWN INT MMULT MINVERSE SIG GOAL_SEEK".split(" ");
   const { functions } = setup();
   for (const name of names) assert.equal(typeof (functions as Record<string, any>)[name], "function", name);
 });

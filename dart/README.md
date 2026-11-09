@@ -86,7 +86,7 @@ callbacks, rather than depending on Dart reflection.
 The `undefined` singleton is distinct from Dart `null`; use
 `identical(value, undefined)` when inspecting results. `createExampleFunctions`
 in `lib/builtins.dart` remains a compatibility wrapper for `createFunctions()`.
-Both now register all 51 formula functions plus print.
+Both now register all 52 formula functions plus print.
 The CLI example uses `dart:io`; the public library does not.
 
 ## Print callback

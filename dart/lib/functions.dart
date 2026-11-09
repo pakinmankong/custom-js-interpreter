@@ -39,6 +39,37 @@ num _numeric(dynamic value, String name, [String parameter = 'number']) {
   return n;
 }
 
+num _mround(dynamic value, dynamic multiple) {
+  final n = _numeric(value, 'MROUND', 'number');
+  final step = _numeric(multiple, 'MROUND', 'multiple');
+  if (n == 0 || step == 0) return 0;
+  if ((n < 0) != (step < 0)) {
+    throw JsError('MROUND() #NUM! number and multiple must have the same sign');
+  }
+  // Use decimal integer arithmetic for consistent halfway rounding in TS/Dart.
+  ({BigInt coefficient, int exponent}) decimal(num value) {
+    final parts = value.abs().toString().split('e');
+    final mantissa = parts[0];
+    final fraction = mantissa.contains('.') ? mantissa.split('.')[1].length : 0;
+    return (
+      coefficient: BigInt.parse(mantissa.replaceFirst('.', '')),
+      exponent: (parts.length > 1 ? int.parse(parts[1]) : 0) - fraction,
+    );
+  }
+
+  final a = decimal(n), b = decimal(step);
+  final shift = a.exponent - b.exponent;
+  final numerator = a.coefficient * BigInt.from(10).pow(math.max(shift, 0));
+  final denominator = b.coefficient * BigInt.from(10).pow(math.max(-shift, 0));
+  final two = BigInt.from(2);
+  final rounded = (two * numerator + denominator) ~/ (two * denominator);
+  final result = double.parse(
+    '${n < 0 ? '-' : ''}${rounded * b.coefficient}e${b.exponent}',
+  );
+  if (!result.isFinite) throw JsError('MROUND() #NUM! result is out of range');
+  return result == 0 ? 0 : result;
+}
+
 int _integer(dynamic value, String name, String parameter) {
   final n = _numeric(value, name, parameter);
   if (n != n.truncateToDouble())
@@ -145,7 +176,7 @@ List<List<double>> _inverse(dynamic value) {
   return work.map((row) => row.sublist(n)).toList();
 }
 
-/// Register the same 51 formula functions plus print as lib/functions.ts.
+/// Register the same 52 formula functions plus print as lib/functions.ts.
 Map<String, dynamic> createFunctions({
   Env Function()? getEnv,
   FunctionServices? services,
@@ -374,6 +405,7 @@ Map<String, dynamic> createFunctions({
     }),
     'ROUNDUP': NativeFunction((a, t) => directed(a, true)),
     'ROUNDDOWN': NativeFunction((a, t) => directed(a, false)),
+    'MROUND': NativeFunction((a, t) => _mround(_arg(a, 0), _arg(a, 1))),
     'INT': NativeFunction((a, t) => _numeric(_arg(a, 0), 'INT').floor()),
     'MMULT': NativeFunction((a, t) {
       final x = _matrix(_arg(a, 0), 'MMULT'), y = _matrix(_arg(a, 1), 'MMULT');

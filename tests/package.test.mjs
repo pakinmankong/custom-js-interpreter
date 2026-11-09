@@ -66,3 +66,10 @@ test('compiled package awaits custom async functions before evaluating dependent
   }});
   assert.equal(await interpreter.executeAsync('var row=FIND_STD_ERROR(1,5);return row.uncertainty+1;'),11);
 });
+
+test('compiled package registers Excel-style MROUND for sync and async execution', async () => {
+  const interpreter = new InterpreterService({functions:createFunctions()});
+  assert.deepEqual(interpreter.execute('return [MROUND(10,3),MROUND(-10,-3),MROUND(1.3,0.2)];'),[9,-9,1.4]);
+  assert.equal(await interpreter.executeAsync('return MROUND(5,2);'),6);
+  assert.throws(()=>interpreter.execute('return MROUND(5,-2);'),/#NUM!/);
+});

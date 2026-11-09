@@ -1,6 +1,6 @@
 # Formula functions
 
-`index.ts` registers all 51 functions from the supplied reference, plus `print`.
+`index.ts` registers all 51 functions from the supplied reference plus `MROUND` and `print`.
 Implementations live in `lib/functions.ts` and accept evaluated parameters
 normally, e.g. `FIRST([1, 2])`, rather than reading `node.arguments`.
 Both TS and Dart interpreters remain synchronous. Dart registers the same set
@@ -70,7 +70,7 @@ The following signatures use `?` for an optional argument.
 | Conversion | `NUMBER(value)`, `NUM(value)`, `STR(value)`, `IS_INFINITY(value)`, `EMPTY(value)`, `ISNULL(value)`, `FORMAT_EXPO(value, fractionDigits?)`, `DECIMAL_PLACES(value)` |
 | Aggregation | `MIN(...values)`, `MAX(...values)`, `AVERAGE(...values)`, `STDEV(...values)`, `SUMSQ(...values)` |
 | Math | `ABS(value)`, `SQRT(value)`, `POWER(base, exponent)`, `EXP(value)`, `LOG(value, base = 10)` (also `"e"`) |
-| Rounding | `FIXED(value, digits = 2)`, `ROUND(value, digits = 0)`, `ROUNDUP(value, digits = 0)`, `ROUNDDOWN(value, digits = 0)`, `INT(value)`, `SIG(value, figures = 2)` |
+| Rounding | `FIXED(value, digits = 2)`, `ROUND(value, digits = 0)`, `MROUND(number, multiple)`, `ROUNDUP(value, digits = 0)`, `ROUNDDOWN(value, digits = 0)`, `INT(value)`, `SIG(value, figures = 2)` |
 | Statistical / numerical | `TINV(probability, degreesOfFreedom)`, `TREND(knownY, knownX, newX)`, `MMULT(a, b)`, `MINVERSE(matrix)`, `GOAL_SEEK(fn, target, tolerance = 1e-6, maxIterations = 100)` |
 | Random | `RAND()`, `RANDBETWEEN(min, max)` |
 | Reference | `FIND_REF_SETTING(setting, verticalValue, horizontalValue?)` |
@@ -128,7 +128,30 @@ The entry point also includes `tests/functions.test.ts`: registry coverage for
 all reference names, interpreted callbacks, numerical checks, row context,
 preloaded Standard/Unit providers and error cases.
 
-`testing.ts` provides an independently named execution test for each of the 51
+`testing.ts` provides an independently named execution test for each of the 52
 reference functions and `print`, plus edge cases and validation tests. All run
 through a fresh InterpreterService. Standard/Unit tests use in-memory providers.
 Run the function cases with `npx tsx --test testing.ts`.
+
+### MROUND
+
+`MROUND(number, multiple)` rounds to the nearest multiple; halfway cases round
+away from zero. Both inputs must have the same sign unless either is zero.
+A zero number or zero multiple returns `0`. Different signs throw an error
+containing `#NUM!`; invalid or non-finite inputs throw parameter-specific errors.
+Only `undefined` fails required validation; numeric strings, `null`, and `""`
+follow the library's usual numeric conversion rules.
+
+```js
+MROUND(10, 3)     // 9
+MROUND(-10, -3)   // -9
+MROUND(1.3, 0.2)  // 1.4
+MROUND(5, 2)      // 6
+MROUND(5, -2)     // throws #NUM!
+```
+
+[Microsoft documents](https://support.microsoft.com/en-us/excel/functions/mround-function)
+undefined rounding direction for decimal midpoints in Excel. This implementation
+uses deterministic decimal arithmetic and always rounds those ties away from
+zero in both TS and Dart (for example, `MROUND(6.05, 0.1)` is `6.1`).
+Results are returned as ordinary numbers; an unrepresentable result throws `#NUM!`.

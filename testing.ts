@@ -116,6 +116,7 @@ const cases: ValueCase[] = [
     (value: number) => assert.ok(Math.abs(value - 2.2281388519649385) < 1e-6),
   ],
   ["ROUND", "ROUND(1.25,1)", 1.3],
+  ["MROUND", "MROUND(10,3)", 9],
   ["ROUNDUP", "ROUNDUP(-1.231,2)", -1.24],
   ["ROUNDDOWN", "ROUNDDOWN(-1.239,2)", -1.23],
   ["INT", "INT(-1.2)", -2],
@@ -156,6 +157,25 @@ test("every registered function has an execution case", () => {
 });
 
 const edgeCases: ValueCase[] = [
+  ["MROUND negative values", "MROUND(-10,-3)", -9],
+  ["MROUND positive midpoint", "MROUND(5,2)", 6],
+  ["MROUND negative midpoint", "MROUND(-5,-2)", -6],
+  ["MROUND fractional multiple", "MROUND(1.3,0.2)", 1.4],
+  ["MROUND below midpoint", "MROUND(1.29,0.2)", 1.2],
+  ["MROUND above midpoint", "MROUND(1.31,0.2)", 1.4],
+  ["MROUND stable decimal midpoint", "MROUND(6.05,0.1)", 6.1],
+  ["MROUND negative decimal midpoint", "MROUND(-7.05,-0.1)", -7.1],
+  ["MROUND decimal result", "MROUND(0.28,0.1)", 0.3],
+  ["MROUND zero multiple", "MROUND(-10,0)", 0],
+  ["MROUND zero number", "MROUND(0,-3)", 0],
+  ["MROUND rounds to zero", "MROUND(-1,-3)", 0],
+  ["MROUND exact multiple", "MROUND(15,5)", 15],
+  ["MROUND numeric strings", 'MROUND("10","3")', 9],
+  ["MROUND null number", "MROUND(null,3)", 0],
+  ["MROUND empty multiple", 'MROUND(10,"")', 0],
+  ["MROUND small values", "MROUND(1.3e-20,2e-21)", 1.4e-20],
+  ["MROUND large values", "MROUND(1.3e20,2e19)", 1.4e20],
+  ["MROUND extreme quotient", "MROUND(1,5e-324)", 1],
   [
     "SUCCESS defaults",
     "SUCCESS()",
@@ -221,6 +241,15 @@ for (const [name, expression, expected] of edgeCases) {
 }
 
 const errors: [name: string, expression: string, pattern: RegExp][] = [
+  ["MROUND missing number", "MROUND()", /<number> is required/],
+  ["MROUND missing multiple", "MROUND(10)", /<multiple> is required/],
+  ["MROUND different signs", "MROUND(5,-2)", /#NUM!.*same sign/],
+  ["MROUND reversed signs", "MROUND(-5,2)", /#NUM!.*same sign/],
+  ["MROUND invalid number", 'MROUND("bad",2)', /<number>.*finite number/],
+  ["MROUND invalid multiple", 'MROUND(2,"bad")', /<multiple>.*finite number/],
+  ["MROUND infinite number", "MROUND(1e999,2)", /<number>.*finite number/],
+  ["MROUND infinite multiple", "MROUND(2,1e999)", /<multiple>.*finite number/],
+  ["MROUND overflow result", "MROUND(1.7e308,1e308)", /#NUM!.*out of range/],
   ["FIRST", "FIRST(1)", /array/],
   ["LAST", "LAST(null)", /array/],
   ["COUNT", "COUNT(1)", /array/],

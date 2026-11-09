@@ -470,6 +470,28 @@ function numeric(value: any, name: string, parameter = "number"): number {
     throw new Error(`${name}() <${parameter}> must be a finite number`);
   return number;
 }
+
+/** Round decimal inputs exactly before converting the result back to a number. */
+function mround(value: any, multiple: any): number {
+  const n = numeric(value, "MROUND", "number");
+  const step = numeric(multiple, "MROUND", "multiple");
+  if (n === 0 || step === 0) return 0;
+  if ((n < 0) !== (step < 0))
+    throw new Error("MROUND() #NUM! number and multiple must have the same sign");
+  const decimal = (value: number) => {
+    const [mantissa, exponent = "0"] = Math.abs(value).toString().split("e");
+    const fraction = mantissa.split(".")[1]?.length ?? 0;
+    return { coefficient: BigInt(mantissa.replace(".", "")), exponent: Number(exponent) - fraction };
+  };
+  const a = decimal(n), b = decimal(step);
+  const shift = a.exponent - b.exponent;
+  const numerator = a.coefficient * 10n ** BigInt(Math.max(shift, 0));
+  const denominator = b.coefficient * 10n ** BigInt(Math.max(-shift, 0));
+  const rounded = (2n * numerator + denominator) / (2n * denominator);
+  const result = Number(`${n < 0 ? "-" : ""}${rounded * b.coefficient}e${b.exponent}`);
+  if (!Number.isFinite(result)) throw new Error("MROUND() #NUM! result is out of range");
+  return result === 0 ? 0 : result;
+}
 function array(value: any, name: string): any[] {
   required(value, name, "array");
   if (!Array.isArray(value))
@@ -742,6 +764,7 @@ export function createFunctions(options: FunctionsOptions = {}) {
       roundDirected(value, digits, true),
     ROUNDDOWN: (value: any, digits: any = 0) =>
       roundDirected(value, digits, false),
+    MROUND: (value: any, multiple: any) => mround(value, multiple),
     INT: (value: any) => Math.floor(numeric(value, "INT")),
     MMULT: (matrixA: any, matrixB: any) => {
       const a = matrix(matrixA, "MMULT"),

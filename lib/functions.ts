@@ -782,12 +782,12 @@ export function createFunctions(options: FunctionsOptions = {}) {
     MINVERSE: (value: any) => inverse(value),
     TINV: (probability: any, degreesOfFreedom: any) => {
       const p = numeric(probability, "TINV", "probability");
-      const df = integer(degreesOfFreedom, "TINV", "degrees_of_freedom");
+      const df = numeric(degreesOfFreedom, "TINV", "degrees_of_freedom");
       if (p <= 0 || p > 1 || df < 1)
         throw new Error(
           "TINV() requires 0 < probability <= 1 and degrees_of_freedom >= 1",
         );
-      return p === 1 ? 0 : jStat.studentt.inv(1 - p / 2, df);
+      return p === 1 ? 0 : jStat.studentt.inv(1 - p / 2, Math.trunc(df));
     },
     RANDBETWEEN: (min: any, max: any) => {
       const low = parseInt(required(min, "RANDBETWEEN", "min"), 10),

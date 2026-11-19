@@ -428,12 +428,12 @@ Map<String, dynamic> createFunctions({
     'MINVERSE': NativeFunction((a, t) => _inverse(_arg(a, 0))),
     'TINV': NativeFunction((a, t) {
       final p = _numeric(_arg(a, 0), 'TINV', 'probability'),
-          df = _integer(_arg(a, 1), 'TINV', 'degrees_of_freedom');
+          df = _numeric(_arg(a, 1), 'TINV', 'degrees_of_freedom');
       if (p <= 0 || p > 1 || df < 1)
         throw JsError(
           'TINV() requires 0 < probability <= 1 and degrees_of_freedom >= 1',
         );
-      return studentTInverse(p.toDouble(), df);
+      return studentTInverse(p.toDouble(), df.truncate());
     }),
     'RANDBETWEEN': NativeFunction((a, t) {
       num parse(dynamic v, String parameter) {

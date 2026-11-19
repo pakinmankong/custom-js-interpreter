@@ -101,6 +101,9 @@ test("TINV matches known two-tailed Student t values", () => {
   const { execute } = setup();
   near(execute(`return TINV(0.05,10);`),2.2281388519649385,1e-6);
   near(execute(`return TINV(0.05,1);`),12.706204736432095,1e-5);
+  near(execute(`return TINV(0.05,10.5);`),2.2281388519649385,1e-6);
+  near(execute(`return TINV(0.05,1.5);`),12.706204736432095,1e-5);
+  assert.throws(() => execute(`return TINV(0.05,0.9);`), /degrees_of_freedom/);
   assert.equal(execute(`return TINV(1,10);`),0);
   assert.throws(() => execute(`return TINV(0,10);`), /probability/);
   assert.throws(() => execute(`return TINV(0.05,0);`), /degrees_of_freedom/);
